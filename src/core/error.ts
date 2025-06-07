@@ -1,27 +1,34 @@
 /**
- * Simplified error handling
+ * Error handling system for XJFN - Simple hierarchy with fail-fast principle
+ * 
+ * Design Intent:
+ * - Clear error hierarchy for different failure types
+ * - Fail-fast with descriptive error messages
+ * - Optional error details/context for debugging
+ * - Consistent error handling patterns
  */
-
-import { LoggerFactory } from "./logger";
-const log = LoggerFactory.create();
-
-// --- Simplified Error Types ---
 
 /**
- * Base XJX error class that other errors extend
+ * Base XJFN error class that other errors extend
  */
-export class XJXError extends Error {
+export class XJFNError extends Error {
   constructor(message: string, public details?: any) {
     super(message);
-    this.name = 'XJXError';
-    Object.setPrototypeOf(this, XJXError.prototype);
+    this.name = 'XJFNError';
+    Object.setPrototypeOf(this, XJFNError.prototype);
   }
 }
 
 /**
- * Error for validation failures
+ * Error for validation failures at API boundaries
+ * 
+ * Used when:
+ * - Invalid input parameters
+ * - Missing required data
+ * - Type validation failures
+ * - Configuration validation errors
  */
-export class ValidationError extends XJXError {
+export class ValidationError extends XJFNError {
   constructor(message: string, details?: any) {
     super(message, details);
     this.name = 'ValidationError';
@@ -31,8 +38,14 @@ export class ValidationError extends XJXError {
 
 /**
  * Error for parsing or serialization failures
+ * 
+ * Used when:
+ * - XML/JSON parsing fails
+ * - Format conversion errors
+ * - Serialization/deserialization issues
+ * - Adapter execution failures
  */
-export class ProcessingError extends XJXError {
+export class ProcessingError extends XJFNError {
   constructor(message: string, public source?: any) {
     super(message, { source });
     this.name = 'ProcessingError';
@@ -40,10 +53,8 @@ export class ProcessingError extends XJXError {
   }
 }
 
-
 /**
- * Validate a condition and throw a ValidationError if it fails.
- * Only use at API boundaries, not for internal validation.
+ * Validate a condition and throw a ValidationError if it fails
  * 
  * @param condition Condition to check
  * @param message Error message if condition fails
@@ -76,29 +87,19 @@ export function handleError<T>(
     data?: Record<string, any>;
   } = {}
 ): T {
-  // Log the error
-  if (err instanceof Error) {
-    log.error(`Error in ${context}`, {
-      error: err,
-      ...(options.data || {})
-    });
-  } else {
-    log.error(`Error in ${context}`, {
-      error: String(err),
-      ...(options.data || {})
-    });
-  }
+  // Determine error message
+  const errorMessage = err instanceof Error ? err.message : String(err);
   
   // Return fallback or throw
   if (options.fallback !== undefined) {
     return options.fallback;
   }
   
-  // Just throw the original error
+  // Re-throw the original error or wrap it
   if (err instanceof Error) {
     throw err;
   }
   
-  // Convert to Error if it's not already
-  throw new Error(`${context}: ${String(err)}`);
+  // Convert to ProcessingError if it's not already an Error
+  throw new ProcessingError(`${context}: ${errorMessage}`, options.data);
 }

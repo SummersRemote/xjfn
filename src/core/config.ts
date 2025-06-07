@@ -1,140 +1,205 @@
 /**
- * Core configuration system - Format-neutral base configuration
- * Adapter-specific configurations are self-contained in their respective adapters
+ * Configuration system for XJFN - Format-neutral core with extension defaults
+ * 
+ * Design Intent:
+ * - Core config is minimal and format-neutral
+ * - Extensions add their own config sections
+ * - Simple object merging (no wrapper classes)
+ * - Global defaults managed automatically
+ * - Clear separation of concerns
  */
-import { LoggerFactory } from "./logger";
-const logger = LoggerFactory.create();
-
-import { deepClone, deepMerge } from "./common";
-import { XNode } from "./xnode";
 
 /**
- * Core configuration interface for XJX base properties
+ * Core configuration interface for XJFN base properties
  */
 export interface Configuration {
-  // Core preservation settings (cross-format)
-  preserveComments: boolean;
-  preserveInstructions: boolean;
-  preserveWhitespace: boolean;
-
-  // High-fidelity mode (verbose data structure mode)
-  highFidelity: boolean;
-
-  // Output formatting (cross-format)
+  // Core format-neutral settings
+  preserveComments: boolean;       // Keep comment nodes during conversion (default: true)
+  preserveInstructions: boolean;   // Keep processing instruction nodes (default: true)
+  preserveWhitespace: boolean;     // Keep whitespace-only text nodes (default: false)
+  
+  // Output formatting (applies to all formats)
   formatting: {
-    indent: number;
-    pretty: boolean;
+    indent: number;                // Number of spaces for indentation (default: 2)
+    pretty: boolean;               // Enable pretty-printing with indentation (default: true)
   };
-
-  // Fragment root name for functional operations
-  fragmentRoot: string | XNode;
+  
+  // Functional operations
+  fragmentRoot: string;            // Root element name for fragmented results (default: 'results')
+  
+  // Extension-specific configurations (added by extensions when registered)
+  // Example: xml: { preserveNamespaces: true, declaration: true }
+  // Example: json: { attributePrefix: '@', arrayStrategy: 'multiple' }
+  // Example: xnode: { validateOnDeserialize: true, compactFormat: false }
+  [extensionName: string]: any;
 }
 
 /**
- * Default core configuration - Format-neutral
+ * Default core configuration - format-neutral
  */
 export const DEFAULT_CONFIG: Configuration = {
-  // Core settings
   preserveComments: true,
   preserveInstructions: true,
   preserveWhitespace: false,
-  
-  // High-fidelity verbose mode
-  highFidelity: false,
-
-  // Output formatting
   formatting: {
     indent: 2,
     pretty: true
   },
-
-  // Fragment root name for functional operations
-  fragmentRoot: "results"
+  fragmentRoot: 'results'
 };
 
 /**
- * Get a fresh copy of the default configuration
+ * Global defaults that include extension defaults
+ * Extensions merge their defaults into this when they register
  */
-export function getDefaultConfig(): Configuration {
-  return deepClone(DEFAULT_CONFIG);
+let globalDefaults: Configuration = { ...DEFAULT_CONFIG };
+
+/**
+ * Merge extension-specific configuration defaults into global defaults
+ * 
+ * Used by extension registration to add their default configuration
+ * 
+ * @param extensionDefaults Extension configuration defaults
+ * 
+ * @example
+ * ```typescript
+ * // XML adapter registering defaults
+ * mergeGlobalDefaults({
+ *   xml: {
+ *     preserveNamespaces: true,
+ *     declaration: true,
+ *     encoding: 'UTF-8'
+ *   }
+ * });
+ * ```
+ */
+export function mergeGlobalDefaults(extensionDefaults: Record<string, any>): void {
+  globalDefaults = { ...globalDefaults, ...extensionDefaults };
 }
 
 /**
- * Merge configurations with deep merge for consistency
+ * Create configuration with optional overrides
+ * 
+ * @param overrides Partial configuration to override defaults
+ * @returns Complete configuration with defaults applied
+ * 
+ * @example
+ * ```typescript
+ * // Create config with custom formatting
+ * const config = createConfig({
+ *   formatting: { indent: 4, pretty: false },
+ *   xml: { declaration: false }
+ * });
+ * ```
  */
-export function mergeConfig(
-  baseConfig: Configuration,
-  overrideConfig: Partial<Configuration> = {}
-): Configuration {
-  return deepMerge(baseConfig, overrideConfig);
-}
-
-/**
- * Create or update configuration with smart defaults
- */
-export function createConfig(
-  config: Partial<Configuration> = {},
-  baseConfig?: Configuration
-): Configuration {
-  // Use provided base or get default
-  const base = baseConfig || getDefaultConfig();
-
-  // Skip merge if empty config (optimization)
-  if (!config || Object.keys(config).length === 0) {
-    logger.debug("Empty configuration provided, skipping merge");
-    return base;
+export function createConfig(overrides?: Partial<Configuration>): Configuration {
+  if (!overrides || Object.keys(overrides).length === 0) {
+    return { ...globalDefaults };
   }
-
-  // Merge and return
-  const result = mergeConfig(base, config);
-
-  logger.debug("Successfully created/updated core configuration", {
-    preserveComments: result.preserveComments,
-    preserveInstructions: result.preserveInstructions,
-    preserveWhitespace: result.preserveWhitespace,
-    highFidelity: result.highFidelity,
-    formattingIndent: result.formatting.indent,
-    formattingPretty: result.formatting.pretty,
-    fragmentRoot: typeof result.fragmentRoot === 'string' ? result.fragmentRoot : 'custom-xnode',
-    totalProperties: Object.keys(result).length
-  });
-
-  return result;
+  
+  // Deep merge to handle nested objects like formatting
+  return deepMerge(globalDefaults, overrides);
 }
 
 /**
- * Validate core configuration for consistency and correctness
+ * Get current global defaults (primarily for testing/debugging)
+ * 
+ * @returns Copy of current global defaults
+ */
+export function getGlobalDefaults(): Configuration {
+  return { ...globalDefaults };
+}
+
+/**
+ * Reset global defaults to core defaults only (for testing)
+ * 
+ * This removes all extension defaults and restores the original core configuration
+ */
+export function resetGlobalDefaults(): void {
+  globalDefaults = { ...DEFAULT_CONFIG };
+}
+
+/**
+ * Validate core configuration properties
+ * 
+ * @param config Configuration to validate
+ * @throws Error if configuration is invalid
  */
 export function validateConfig(config: Configuration): void {
   // Validate core settings
   if (typeof config.preserveComments !== 'boolean') {
     throw new Error('preserveComments must be a boolean');
   }
-
+  
   if (typeof config.preserveInstructions !== 'boolean') {
     throw new Error('preserveInstructions must be a boolean');
   }
-
+  
   if (typeof config.preserveWhitespace !== 'boolean') {
     throw new Error('preserveWhitespace must be a boolean');
   }
-
-  if (typeof config.highFidelity !== 'boolean') {
-    throw new Error('highFidelity must be a boolean');
-  }
-
+  
   // Validate formatting
+  if (!config.formatting || typeof config.formatting !== 'object') {
+    throw new Error('formatting must be an object');
+  }
+  
   if (typeof config.formatting.indent !== 'number' || config.formatting.indent < 0) {
     throw new Error('formatting.indent must be a non-negative number');
   }
-
+  
   if (typeof config.formatting.pretty !== 'boolean') {
     throw new Error('formatting.pretty must be a boolean');
   }
-
+  
   // Validate fragmentRoot
-  if (typeof config.fragmentRoot !== 'string' && 
-      (typeof config.fragmentRoot !== 'object' || !config.fragmentRoot.name)) {
-    throw new Error('fragmentRoot must be a string or XNode with name property');
+  if (typeof config.fragmentRoot !== 'string' || !config.fragmentRoot.trim()) {
+    throw new Error('fragmentRoot must be a non-empty string');
   }
+}
+
+// --- Helper Functions ---
+
+/**
+ * Deep merge two configuration objects
+ * 
+ * @param target Target configuration
+ * @param source Source configuration to merge
+ * @returns New merged configuration
+ */
+function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+  if (!source || typeof source !== 'object' || source === null) {
+    return { ...target };
+  }
+  
+  if (!target || typeof target !== 'object' || target === null) {
+    return { ...source } as T;
+  }
+  
+  const result = { ...target };
+  
+  Object.keys(source).forEach((key) => {
+    const sourceValue = source[key as keyof Partial<T>];
+    const targetValue = result[key as keyof T];
+    
+    // If both values are objects (not arrays), recursively merge them
+    if (
+      sourceValue !== null &&
+      targetValue !== null &&
+      typeof sourceValue === 'object' &&
+      typeof targetValue === 'object' &&
+      !Array.isArray(sourceValue) &&
+      !Array.isArray(targetValue)
+    ) {
+      (result[key as keyof T] as any) = deepMerge(
+        targetValue as Record<string, any>,
+        sourceValue as Record<string, any>
+      );
+    } else {
+      // Otherwise just replace the value
+      (result[key as keyof T] as any) = sourceValue;
+    }
+  });
+  
+  return result;
 }

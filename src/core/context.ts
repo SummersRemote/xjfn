@@ -1,219 +1,195 @@
 /**
- * Simplified pipeline context system - Enterprise features removed
- * Phases 1 & 2: Core simplification with ~200 lines removed
+ * Pipeline context system for XJFN - Simple context with namespaced metadata
+ * 
+ * Design Intent:
+ * - Single context class for all operations (no interface/implementation split)
+ * - Simple configuration management (no wrapper classes)
+ * - Basic logging integration
+ * - Namespaced metadata storage for extension coordination
+ * - Fail-fast validation
+ * 
+ * Metadata System:
+ * - Extensions store data under their own namespace to avoid conflicts
+ * - Useful for cross-extension communication and round-trip preservation
+ * - Examples: xml.hasNamespaces, json.originalType, xnode.serializedAt
+ * - Enables intelligent processing decisions based on source characteristics
  */
-import { LoggerFactory, Logger } from "./logger";
-import { Configuration, createConfig } from "./config";
-import { ValidationError } from "./error";
-import { XNode, cloneNode } from "./xnode";
-import { PipelineHooks } from "./hooks";
+
+import { Configuration } from './config';
+import { Logger, LoggerFactory } from './logger';
+import { ValidationError } from './error';
+import { XNode, cloneNode } from './xnode';
 
 /**
- * Clone policy for consistent node cloning across pipeline
+ * Pipeline context providing execution environment and services
  */
-export interface ClonePolicy {
-  readonly strategy: 'deep' | 'shallow' | 'none';
-  readonly preserveParent: boolean;
-}
-
-/**
- * Default clone policies for different operations
- */
-export const ClonePolicies = {
-  BRANCH: { strategy: 'deep', preserveParent: false } as ClonePolicy,
-  TRANSFORM: { strategy: 'deep', preserveParent: false } as ClonePolicy,
-  OUTPUT: { strategy: 'shallow', preserveParent: true } as ClonePolicy,
-  NONE: { strategy: 'none', preserveParent: false } as ClonePolicy
-} as const;
-
-/**
- * Configuration manager with validation and merging capabilities
- */
-export class ConfigurationManager {
-  constructor(private config: Configuration) {}
-  
-  /**
-   * Validate configuration for specific operation
-   */
-  validate(operation: string): void {
-    if (!this.config) {
-      throw new ValidationError(`Configuration required for ${operation}`);
-    }
-  }
-  
-  /**
-   * Create a copy of this configuration manager
-   */
-  clone(): ConfigurationManager {
-    return new ConfigurationManager(createConfig({}, this.config));
-  }
-  
-  /**
-   * Merge configuration updates
-   */
-  merge(updates: Partial<Configuration>): ConfigurationManager {
-    return new ConfigurationManager(createConfig(updates, this.config));
-  }
-  
-  /**
-   * Get the current configuration
-   */
-  get(): Configuration {
-    return this.config;
-  }
-}
-
-/**
- * Simplified resource management for basic cleanup only
- * REMOVED: Performance tracking, memory estimation, resource counting, health reporting
- */
-export class ResourceManager {
-  private documentRefs = new Set<Document>();
-  private cleanupCallbacks = new Set<() => void>();
-  
-  /**
-   * Register a DOM document for cleanup
-   */
-  registerDOMDocument(doc: Document): void {
-    this.documentRefs.add(doc);
-  }
-  
-  /**
-   * Register an XNode for tracking (simplified - no counting)
-   */
-  registerXNode(node: XNode): void {
-    // Simplified: just register for potential cleanup, no counting
-  }
-  
-  /**
-   * Register a cleanup callback
-   */
-  registerCleanupCallback(callback: () => void): void {
-    this.cleanupCallbacks.add(callback);
-  }
-  
-  /**
-   * Clean up all registered resources
-   */
-  cleanup(): void {
-    // Execute cleanup callbacks
-    for (const callback of this.cleanupCallbacks) {
-      try {
-        callback();
-      } catch (err) {
-        // Ignore cleanup errors but log them
-        console.warn('Resource cleanup callback error:', err);
-      }
-    }
-    
-    // Clear references
-    this.documentRefs.clear();
-    this.cleanupCallbacks.clear();
-  }
-  
-  /**
-   * Simple check if cleanup is needed (based on document count only)
-   */
-  isCleanupNeeded(): boolean {
-    return this.documentRefs.size > 10 || this.cleanupCallbacks.size > 50;
-  }
-}
-
-/**
- * Simplified pipeline context providing core services only
- * REMOVED: Performance tracking, health monitoring, resource reporting
- */
-export interface PipelineContext {
-  config: ConfigurationManager;
-  logger: Logger;
-  resources: ResourceManager;
-  hooks?: PipelineHooks;
-  
-  // Core operations only
-  validateInput(condition: boolean, message: string): void;
-  cloneNode(node: XNode, policy?: ClonePolicy): XNode;
-  executeHooks<T>(hooks: any, stage: string, input: T): T;
-}
-
-/**
- * Simplified implementation of PipelineContext
- * REMOVED: Advanced monitoring, performance tracking, optimization features
- */
-export class PipelineContextImpl implements PipelineContext {
-  public config: ConfigurationManager;
+export class PipelineContext {
+  public config: Configuration;
   public logger: Logger;
-  public resources: ResourceManager;
-  public hooks?: PipelineHooks;
+  public metadata: Record<string, Record<string, any>>; // Namespaced metadata storage
   
-  constructor(
-    config: Configuration,
-    pipelineHooks?: PipelineHooks
-  ) {
-    this.config = new ConfigurationManager(config);
-    this.logger = LoggerFactory.create();
-    this.resources = new ResourceManager();
-    this.hooks = pipelineHooks;
+  constructor(config: Configuration) {
+    this.config = config;
+    this.logger = LoggerFactory.create('XJFN');
+    this.metadata = {}; // Initialize empty metadata
   }
   
+  // --- Node Operations ---
+  
   /**
-   * Validate input conditions with consistent error handling
+   * Clone an XNode with simple deep/shallow flag
+   * 
+   * @param node Node to clone
+   * @param deep Whether to deep clone children and attributes
+   * @returns Cloned node
+   */
+  cloneNode(node: XNode, deep: boolean = false): XNode {
+    return cloneNode(node, deep);
+  }
+  
+  // --- Validation ---
+  
+  /**
+   * Fail-fast input validation with consistent error handling
+   * 
+   * @param condition Condition to check
+   * @param message Error message if condition fails
+   * @throws ValidationError if condition is false
    */
   validateInput(condition: boolean, message: string): void {
     if (!condition) {
+      this.logger.error(`Validation failed: ${message}`);
       throw new ValidationError(message);
     }
   }
   
+  // --- Configuration Management ---
+  
   /**
-   * Clone XNode with consistent policy application
+   * Update configuration (for withConfig() extension)
+   * 
+   * @param updates Partial configuration updates to merge
    */
-  cloneNode(node: XNode, policy: ClonePolicy = ClonePolicies.TRANSFORM): XNode {
-    let result: XNode;
-    
-    switch (policy.strategy) {
-      case 'deep':
-        result = cloneNode(node, true);
-        if (!policy.preserveParent) {
-          result.parent = undefined;
-        }
-        this.resources.registerXNode(result);
-        break;
-        
-      case 'shallow':
-        result = cloneNode(node, false);
-        if (!policy.preserveParent) {
-          result.parent = undefined;
-        }
-        this.resources.registerXNode(result);
-        break;
-        
-      case 'none':
-      default:
-        result = node;
-        break;
+  mergeConfig(updates: Partial<Configuration>): void {
+    this.config = { ...this.config, ...updates };
+    this.logger.debug('Configuration updated', updates);
+  }
+  
+  // --- Namespaced Metadata Management ---
+  
+  /**
+   * Set metadata value for a specific namespace and key
+   * 
+   * @param namespace Namespace (e.g., 'xml', 'json', 'xnode')
+   * @param key Metadata key
+   * @param value Metadata value
+   * 
+   * @example
+   * ```typescript
+   * context.setMetadata('xml', 'hasNamespaces', true);
+   * context.setMetadata('json', 'originalType', 'array');
+   * ```
+   */
+  setMetadata(namespace: string, key: string, value: any): void {
+    if (!this.metadata[namespace]) {
+      this.metadata[namespace] = {};
     }
-    
-    return result;
+    this.metadata[namespace][key] = value;
+    this.logger.debug(`Metadata set: ${namespace}.${key}`, value);
   }
   
   /**
-   * Execute hooks with consistent error handling and logging
+   * Get metadata value(s) for a namespace
+   * 
+   * @param namespace Namespace to get metadata from
+   * @param key Optional specific key to get (if omitted, returns all namespace metadata)
+   * @returns Metadata value or namespace object
+   * 
+   * @example
+   * ```typescript
+   * const hasNamespaces = context.getMetadata('xml', 'hasNamespaces');
+   * const allXmlMetadata = context.getMetadata('xml');
+   * ```
    */
-  executeHooks<T>(hooks: any, stage: string, input: T): T {
-    if (!hooks) return input;
-    
-    try {
-      if (hooks.beforeStep) {
-        hooks.beforeStep(stage, input);
-      }
-      
-      if (hooks.afterStep) {
-        hooks.afterStep(stage, input);
-      }
-    } catch (err) {
-      this.logger.warn(`Error in pipeline hooks for ${stage}:`, err);
+  getMetadata(namespace: string, key?: string): any {
+    if (!key) {
+      return this.metadata[namespace] || {};
     }
-    
-    return input;
+    return this.metadata[namespace]?.[key];
+  }
+  
+  /**
+   * Check if metadata exists for a namespace/key
+   * 
+   * @param namespace Namespace to check
+   * @param key Optional specific key to check (if omitted, checks if namespace has any metadata)
+   * @returns true if metadata exists
+   * 
+   * @example
+   * ```typescript
+   * if (context.hasMetadata('xml', 'hasNamespaces')) {
+   *   // Use namespace-aware processing
+   * }
+   * ```
+   */
+  hasMetadata(namespace: string, key?: string): boolean {
+    if (!key) {
+      return !!this.metadata[namespace] && Object.keys(this.metadata[namespace]).length > 0;
+    }
+    return !!this.metadata[namespace]?.[key];
+  }
+  
+  /**
+   * Clear metadata for a namespace or specific key
+   * 
+   * @param namespace Namespace to clear
+   * @param key Optional specific key to clear (if omitted, clears all namespace metadata)
+   * 
+   * @example
+   * ```typescript
+   * context.clearMetadata('xml', 'hasNamespaces'); // Clear specific key
+   * context.clearMetadata('xml'); // Clear all xml metadata
+   * ```
+   */
+  clearMetadata(namespace: string, key?: string): void {
+    if (!key) {
+      delete this.metadata[namespace];
+      this.logger.debug(`Cleared all metadata for namespace: ${namespace}`);
+    } else if (this.metadata[namespace]) {
+      delete this.metadata[namespace][key];
+      this.logger.debug(`Cleared metadata: ${namespace}.${key}`);
+    }
+  }
+  
+  // --- Logging Helpers ---
+  
+  /**
+   * Log an operation with optional details
+   * 
+   * @param operation Operation name
+   * @param details Optional structured details
+   * 
+   * @example
+   * ```typescript
+   * context.logOperation('xml-parse', { elementCount: 42, hasNamespaces: true });
+   * ```
+   */
+  logOperation(operation: string, details?: any): void {
+    this.logger.debug(`Operation: ${operation}`, details);
+  }
+  
+  /**
+   * Log an error for an operation
+   * 
+   * @param operation Operation name where error occurred
+   * @param error Error that occurred
+   * 
+   * @example
+   * ```typescript
+   * context.logError('xml-parse', new Error('Invalid XML syntax'));
+   * ```
+   */
+  logError(operation: string, error: Error): void {
+    this.logger.error(`Error in ${operation}:`, error);
   }
 }
