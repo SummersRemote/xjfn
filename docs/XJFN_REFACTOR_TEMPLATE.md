@@ -1,6 +1,6 @@
 # XJX Implementation Context
 
-**Project**: Greenfield implementation of XJFN data transformation library
+**Project**: Greenfield implementation of XJX data transformation library
 **Current Phase**: [Phase X]
 **Previous Phases Completed**: [List]
 **New Repo**: [repo-name]

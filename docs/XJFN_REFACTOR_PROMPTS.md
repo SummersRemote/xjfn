@@ -152,10 +152,22 @@ Create the main xjfn class that serves as the entry point and extension host for
 - Example usage patterns in comments
 
 When complete, provide a phase summary covering:
-- How the extension registration system works
-- Configuration defaults merging mechanism
-- Integration with Phase 1 components
-- Readiness for Phase 3 and 4 extensions
+# XJX Implementation Context
+
+**Project**: Greenfield implementation of XJX data transformation library
+**Current Phase**: [Phase X]
+**Previous Phases Completed**: [List]
+**New Repo**: [repo-name]
+**Reference Repo**: [old-repo-name]
+
+**Key Architectural Decisions from Previous Phases**:
+- [Any important decisions made during implementation]
+- [Deviations from original plan, if any]
+- [Interface changes or simplifications]
+
+**Current State**:
+- [What's implemented and verified]
+- [Any issues or concerns to address]
 
 Please acknowledge this task and ask any clarifying questions before proceeding.
 
@@ -218,10 +230,22 @@ Create a complete transform function library that provides pure, composable func
 - Clear module exports
 
 When complete, provide a phase summary covering:
-- Transform function architecture and patterns
-- How composition works
-- Integration with XNode system
-- Examples of common usage patterns
+# XJX Implementation Context
+
+**Project**: Greenfield implementation of XJX data transformation library
+**Current Phase**: [Phase X]
+**Previous Phases Completed**: [List]
+**New Repo**: [repo-name]
+**Reference Repo**: [old-repo-name]
+
+**Key Architectural Decisions from Previous Phases**:
+- [Any important decisions made during implementation]
+- [Deviations from original plan, if any]
+- [Interface changes or simplifications]
+
+**Current State**:
+- [What's implemented and verified]
+- [Any issues or concerns to address]
 
 Please acknowledge this task and ask any clarifying questions before proceeding.
 
