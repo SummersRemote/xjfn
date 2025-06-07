@@ -12,7 +12,7 @@ import {
   TreeVisitor,
   TraversalOptions,
   TraversalContext
-} from '../src/core/traversal';
+} from '../../src/core/traversal';
 import {
   XNode,
   XNodeType,
@@ -21,9 +21,9 @@ import {
   createField,
   createValue,
   addChild
-} from '../src/core/xnode';
-import { PipelineContext } from '../src/core/context';
-import { createConfig } from '../src/core/config';
+} from '../../src/core/xnode';
+import { PipelineContext } from '../../src/core/context';
+import { createConfig } from '../../src/core/config';
 
 describe('Core Traversal', () => {
   let mockContext: PipelineContext;

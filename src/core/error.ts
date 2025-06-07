@@ -101,5 +101,10 @@ export function handleError<T>(
   }
   
   // Convert to ProcessingError if it's not already an Error
-  throw new ProcessingError(`${context}: ${errorMessage}`, options.data);
+  // Create ProcessingError with original error as source, then set details directly
+  const processingError = new ProcessingError(`${context}: ${errorMessage}`, err);
+  if (options.data) {
+    processingError.details = options.data;
+  }
+  throw processingError;
 }

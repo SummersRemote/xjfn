@@ -7,22 +7,23 @@
     "@typescript-eslint/recommended"
   ],
   "parserOptions": {
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
     "sourceType": "module",
     "project": "./tsconfig.json"
   },
   "rules": {
-    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-inferrable-types": "off",
     "@typescript-eslint/prefer-const": "error",
     "@typescript-eslint/no-var-requires": "error",
+    "@typescript-eslint/consistent-type-imports": "error",
     "prefer-const": "error",
     "no-var": "error",
     "no-console": "off",
-    "no-debugger": "error",
+    "no-debugger": "warn",
     "no-duplicate-imports": "error",
     "no-unused-expressions": "error",
     "prefer-template": "error",
@@ -33,12 +34,23 @@
   },
   "env": {
     "node": true,
-    "es6": true
+    "es2020": true,
+    "jest": true
   },
   "ignorePatterns": [
     "dist/",
     "node_modules/",
+    "coverage/",
     "*.js",
     "*.d.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["tests/**/*.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-non-null-assertion": "off"
+      }
+    }
   ]
 }

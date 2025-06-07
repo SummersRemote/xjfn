@@ -8,18 +8,18 @@ import {
   ExtensionImplementation,
   BaseExtensionContext,
   Extension
-} from '../src/core/extension';
+} from '../../src/core/extension';
 import {
   XNode,
   XNodeType,
   createRecord,
   createField,
   addChild
-} from '../src/core/xnode';
-import { PipelineContext } from '../src/core/context';
-import { createConfig } from '../src/core/config';
-import { Adapter } from '../src/core/adapter';
-import { ValidationError } from '../src/core/error';
+} from '../../src/core/xnode';
+import { PipelineContext } from '../../src/core/context';
+import { createConfig } from '../../src/core/config';
+import { Adapter } from '../../src/core/adapter';
+import { ValidationError } from '../../src/core/error';
 
 describe('Core Extension System', () => {
   let mockContext: PipelineContext;

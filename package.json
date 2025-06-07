@@ -1,21 +1,14 @@
 {
   "name": "xjfn",
-  "version": "1.0.0",
-  "description": "A modular XML/JSON transformation library with fluent API",
+  "version": "0.1.0",
+  "description": "A modular XML/JSON transformation library with semantic XNode foundation",
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/types/index.d.ts"
-    },
-    "./transforms": {
-      "import": "./dist/esm/transforms/index.js",
-      "require": "./dist/cjs/transforms/index.js",
-      "types": "./dist/types/transforms/index.d.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
@@ -26,55 +19,38 @@
   ],
   "scripts": {
     "clean": "rimraf dist",
-    "build": "npm run clean && npm run build:types && npm run build:js",
-    "build:types": "tsc --emitDeclarationOnly --declarationDir dist/types --outDir dist/types",
-    "build:js": "rollup -c",
-    "build:prod": "NODE_ENV=production npm run build:js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
-    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
+    "build": "npm run clean && tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "xml",
     "json",
-    "convert",
     "transform",
-    "xml-parser",
-    "json-parser"
+    "semantic",
+    "xnode",
+    "data-transformation"
   ],
   "license": "MIT",
-  "sideEffects": [
-    "**/extensions/*.js",
-    "**/extensions/*.ts",
-    "**/index.js",
-    "**/index.ts",
-    "dist/esm/index.js",
-    "dist/cjs/index.js",
-    "dist/esm/extensions/*.js",
-    "dist/cjs/extensions/*.js"
-  ],
   "devDependencies": {
-    "@babel/core": "^7.27.1",
-    "@babel/preset-env": "^7.27.2",
-    "@jest/globals": "^29.7.0",
-    "@rollup/plugin-commonjs": "^25.0.8",
-    "@rollup/plugin-node-resolve": "^15.3.1",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.6",
     "@types/jest": "^29.5.0",
-    "@types/node": "^18.15.11",
-    "babel-jest": "^29.7.0",
-    "eslint": "^8.37.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "rimraf": "^4.4.1",
-    "rollup": "^3.29.5",
-    "rollup-plugin-filesize": "^10.0.0",
-    "ts-jest": "^29.3.3",
-    "typescript": "^5.8.3"
+    "rimraf": "^5.0.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.2.0"
   },
   "peerDependencies": {
-    "jsdom": "^21.1.1"
+    "jsdom": "^22.0.0"
   },
   "peerDependenciesMeta": {
     "jsdom": {
@@ -85,6 +61,6 @@
     }
   },
   "engines": {
-    "node": ">=14.16.0"
+    "node": ">=16.0.0"
   }
 }

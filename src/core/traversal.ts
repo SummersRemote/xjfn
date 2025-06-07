@@ -141,6 +141,8 @@ export function traverseTree<T>(
     const result = traverseNodeRecursive(node, visitor, options, {
       path: [],
       depth: 0,
+      parent: undefined,
+      index: undefined,
       pipelineContext: context
     });
     
@@ -176,7 +178,16 @@ function traverseNodeRecursive<T>(
   try {
     // Pre-order visit
     if (order === 'pre' || order === 'both') {
-      preResult = visitor.visit(node, traversalContext);
+      try {
+        preResult = visitor.visit(node, traversalContext);
+      } catch (err) {
+        traversalContext.pipelineContext.logger.warn(
+          `Error in visitor for node '${node.name}' at path [${traversalContext.path.join(',')}]:`, 
+          err
+        );
+        // Continue with traversal even if visitor fails
+        preResult = undefined;
+      }
     }
     
     // Traverse children
@@ -192,14 +203,31 @@ function traverseNodeRecursive<T>(
           pipelineContext: traversalContext.pipelineContext
         };
         
-        const childResult = traverseNodeRecursive(child, visitor, options, childContext);
-        childResults.push(childResult);
+        try {
+          const childResult = traverseNodeRecursive(child, visitor, options, childContext);
+          childResults.push(childResult);
+        } catch (err) {
+          // Log child traversal error but continue with other children
+          traversalContext.pipelineContext.logger.warn(
+            `Error traversing child at path [${childContext.path.join(',')}]:`, 
+            err
+          );
+        }
       }
     }
     
     // Post-order visit
     if (order === 'post' || order === 'both') {
-      postResult = visitor.visit(node, traversalContext);
+      try {
+        postResult = visitor.visit(node, traversalContext);
+      } catch (err) {
+        traversalContext.pipelineContext.logger.warn(
+          `Error in visitor for node '${node.name}' at path [${traversalContext.path.join(',')}]:`, 
+          err
+        );
+        // Continue with traversal even if visitor fails
+        postResult = undefined;
+      }
     }
     
     // Combine results if visitor provides combineResults
@@ -218,10 +246,9 @@ function traverseNodeRecursive<T>(
       `Error processing node '${node.name}' at path [${traversalContext.path.join(',')}]:`, 
       err
     );
-    // Return result from successful visit or re-throw
-    if (preResult !== undefined) return preResult;
-    if (postResult !== undefined) return postResult;
-    throw err;
+    // Return a safe default instead of throwing
+    // This allows traversal to continue gracefully
+    throw err; // Only structural errors should propagate
   }
 }
 
