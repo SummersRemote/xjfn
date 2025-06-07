@@ -1,6 +1,9 @@
-# XJX Framework Implementation Prompts by Phase
+# xjfn Framework Implementation Prompts by Phase
 
 ## Important Context
+
+**old repo:  XJX**
+**target report: XJFN**
 
 **This is a greenfield implementation - a complete clean break from existing code.** 
 
@@ -16,7 +19,7 @@ Reference the detailed architecture document for complete specifications, interf
 
 ## Phase 1: Core Infrastructure
 
-You are implementing the foundational core infrastructure for a new data transformation library called XJX. This is a **greenfield implementation** emphasizing **simplicity and consistency**.
+You are implementing the foundational core infrastructure for a new data transformation library called xjfn. This is a **greenfield implementation** emphasizing **simplicity and consistency**.
 
 **Your Task:**
 Implement the core infrastructure components that provide the semantic foundation for the entire framework:
@@ -77,24 +80,36 @@ Implement the core infrastructure components that provide the semantic foundatio
 - Each file should be a complete artifact with proper imports/exports
 - All interfaces should match the architecture specification exactly
 
-When complete, provide a phase summary covering:
-- What was implemented
-- Key design decisions made
-- How the components work together
-- Dependencies for the next phase
+When complete, provide the following information:
+# XJX Implementation Context
+
+**Project**: Greenfield implementation of XJFN data transformation library
+**Current Phase**: [Phase X]
+**Previous Phases Completed**: [List]
+**New Repo**: [repo-name]
+**Reference Repo**: [old-repo-name]
+
+**Key Architectural Decisions from Previous Phases**:
+- [Any important decisions made during implementation]
+- [Deviations from original plan, if any]
+- [Interface changes or simplifications]
+
+**Current State**:
+- [What's implemented and verified]
+- [Any issues or concerns to address]
 
 Please acknowledge this task and ask any clarifying questions before proceeding.
 
 ---
 
-## Phase 2: Main XJX Class & Extension Registration
+## Phase 2: Main xjfn Class & Extension Registration
 
-You are implementing the main XJX class and extension registration system for the XJX data transformation library. This builds on the **Phase 1 core infrastructure** and is a **greenfield implementation** focusing on **simplicity and consistency**.
+You are implementing the main xjfn class and extension registration system for the xjfn data transformation library. This builds on the **Phase 1 core infrastructure** and is a **greenfield implementation** focusing on **simplicity and consistency**.
 
 **Your Task:**
-Create the main XJX class that serves as the entry point and extension host for the entire framework:
+Create the main xjfn class that serves as the entry point and extension host for the entire framework:
 
-1. **Main XJX Class** (`src/XJX.ts`)
+1. **Main xjfn Class** (`src/xjfn.ts`)
    - Implements ExtensionContext interface
    - Manages xnode, branchContext, and context (PipelineContext)
    - Constructor accepts optional configuration
@@ -120,7 +135,7 @@ Create the main XJX class that serves as the entry point and extension host for 
 - **Automatic Configuration**: Extensions provide their config defaults when registering
 
 **Implementation Details:**
-- Extension methods are added to XJX.prototype dynamically
+- Extension methods are added to xjfn.prototype dynamically
 - Non-terminal methods wrapped to return `this` for chaining
 - Terminal methods return their values directly
 - Global configuration defaults automatically merged from extension configs
@@ -131,7 +146,7 @@ Create the main XJX class that serves as the entry point and extension host for 
 - Must work with the exact interfaces defined in the architecture
 
 **Deliverables:**
-- Complete XJX.ts implementation
+- Complete xjfn.ts implementation
 - Comprehensive TypeScript types and interfaces
 - JSDoc documentation explaining the registration system
 - Example usage patterns in comments
@@ -148,7 +163,7 @@ Please acknowledge this task and ask any clarifying questions before proceeding.
 
 ## Phase 3: Transform Functions
 
-You are implementing pure transform functions for the XJX data transformation library. This is a **greenfield implementation** that emphasizes **simplicity and functional purity**. These transforms work with the XNode system from Phase 1.
+You are implementing pure transform functions for the xjfn data transformation library. This is a **greenfield implementation** that emphasizes **simplicity and functional purity**. These transforms work with the XNode system from Phase 1.
 
 **Your Task:**
 Create a complete transform function library that provides pure, composable functions for data transformation:
@@ -214,7 +229,7 @@ Please acknowledge this task and ask any clarifying questions before proceeding.
 
 ## Phase 4: Functional Operations
 
-You are implementing the core functional operations for the XJX data transformation library. This builds on **Phases 1-3** and is a **greenfield implementation** emphasizing **simplicity and consistency**. These operations provide the fluent API for tree manipulation.
+You are implementing the core functional operations for the xjfn data transformation library. This builds on **Phases 1-3** and is a **greenfield implementation** emphasizing **simplicity and consistency**. These operations provide the fluent API for tree manipulation.
 
 **Your Task:**
 Create the complete functional API that operates on XNode trees using the unified traversal system:
@@ -234,7 +249,7 @@ Create the complete functional API that operates on XNode trees using the unifie
    - Path-based operations for branch/merge
 
 3. **Extension Registration**
-   - Register all operations using XJX.registerExtension from Phase 2
+   - Register all operations using xjfn.registerExtension from Phase 2
    - Clear separation: filter, map, select, branch, merge are non-terminal
    - reduce is terminal (returns value, not this)
    - No configuration defaults needed for functional operations
@@ -278,7 +293,7 @@ Please acknowledge this task and ask any clarifying questions before proceeding.
 
 ## Phase 5: Format Adapters
 
-You are implementing self-contained format adapters for the XJX data transformation library. This builds on **Phases 1-4** and is a **greenfield implementation** emphasizing **adapter self-containment and format-specific intelligence**.
+You are implementing self-contained format adapters for the xjfn data transformation library. This builds on **Phases 1-4** and is a **greenfield implementation** emphasizing **adapter self-containment and format-specific intelligence**.
 
 **Your Task:**
 Create complete, production-ready XML and JSON format adapters that handle all format-specific concerns:
@@ -300,7 +315,7 @@ Create complete, production-ready XML and JSON format adapters that handle all f
    - Metadata tracking (originalType, isArray, hasAttributes)
 
 3. **Adapter Self-Registration**
-   - Each adapter registers its extensions with XJX.registerExtension
+   - Each adapter registers its extensions with xjfn.registerExtension
    - Comprehensive configuration defaults provided during registration
    - Extensions use executeAdapter() from Phase 2 for execution
 
@@ -351,7 +366,7 @@ Please acknowledge this task and ask any clarifying questions before proceeding.
 
 ## Phase 6: Configuration Extensions
 
-You are implementing configuration management extensions for the XJX data transformation library. This builds on **Phases 1-5** and is a **greenfield implementation** focusing on **simple, direct configuration management**.
+You are implementing configuration management extensions for the xjfn data transformation library. This builds on **Phases 1-5** and is a **greenfield implementation** focusing on **simple, direct configuration management**.
 
 **Your Task:**
 Create configuration extensions that provide a clean API for managing library configuration:
@@ -413,14 +428,14 @@ Please acknowledge this task and ask any clarifying questions before proceeding.
 
 ## Phase 7: Integration & Exports
 
-You are implementing the final integration and public API exports for the XJX data transformation library. This brings together **all previous phases** in a **greenfield implementation** emphasizing **clean public API and easy usage**.
+You are implementing the final integration and public API exports for the xjfn data transformation library. This brings together **all previous phases** in a **greenfield implementation** emphasizing **clean public API and easy usage**.
 
 **Your Task:**
 Create the final integration layer that assembles the complete library with proper exports and auto-registration:
 
 1. **Main Index File** (`src/index.ts`)
    - Import all extension files to trigger auto-registration
-   - Export main XJX class and default export
+   - Export main xjfn class and default export
    - Export all core interfaces and types
    - Export utility functions and helpers
    - Export adapters and transforms for direct access
@@ -456,7 +471,7 @@ Create the final integration layer that assembles the complete library with prop
 - Proper tree-shaking support
 
 **Export Organization:**
-- Main XJX class and configuration
+- Main xjfn class and configuration
 - Core XNode system and utilities
 - Transform functions and composition
 - Extension contexts and interfaces
@@ -522,7 +537,7 @@ Please acknowledge this task and ask any clarifying questions before proceeding.
 
 ### Success Criteria
 
-At the end of all phases, the XJX library should provide:
+At the end of all phases, the xjfn library should provide:
 - **Clean Architecture**: Clear separation between core and adapters
 - **Extensibility**: Easy addition of new format adapters
 - **Consistency**: Same patterns throughout the codebase

@@ -13,7 +13,9 @@ This eliminates the complexity of high-fidelity JSON while providing clear use c
 
 The XNode serialization approach is much cleaner - it's just the semantic tree structure as JSON, containing all the information needed to perfectly reconstruct any source format. This provides the best of both worlds: compact JSON when you want it, and perfect fidelity when you need it.
 
-Your insight to separate these concerns makes the library much more intuitive and maintainable!# XJFN Framework Detailed Refactor Plan
+Your insight to separate these concerns makes the library much more intuitive and maintainable!
+
+# XJFN Framework Detailed Refactor Plan
 
 ## Project Description
 
@@ -54,7 +56,7 @@ This is a **greenfield implementation** that creates a clean, extensible framewo
 ### Architecture Layers
 ```
 ┌─────────────────────────────────────┐
-│ Extensions (XML, JSON, CSV, etc.)   │ ← Format-specific adapters
+│ Extensions (XML, JSON, XNode, etc.) │ ← Format-specific adapters
 ├─────────────────────────────────────┤
 │ Functional Operations (map, filter) │ ← Tree manipulation
 ├─────────────────────────────────────┤
@@ -198,7 +200,7 @@ export function updateAttribute(
  * Metadata System:
  * - Extensions store data under their own namespace to avoid conflicts
  * - Useful for cross-extension communication and round-trip preservation
- * - Examples: xml.hasNamespaces, json.originalType, csv.headers
+ * - Examples: xml.hasNamespaces, json.originalType, xnode.serializedAt
  * - Enables intelligent processing decisions based on source characteristics
  */
 
@@ -214,7 +216,7 @@ export class PipelineContext {
   
   constructor(config: Configuration) {
     this.config = config;
-    this.logger = LoggerFactory.create('XJX');
+    this.logger = LoggerFactory.create('XJFN');
     this.metadata = {}; // Initialize empty metadata
   }
   
@@ -332,7 +334,7 @@ export interface ExtensionImplementation {
 //   // ... extension logic
 // }
 // 
-// XJX.registerExtension('myExtension', { 
+// XJFN.registerExtension('myExtension', { 
 //   method: myExtension, 
 //   isTerminal: false 
 // }, {
@@ -373,7 +375,8 @@ export interface Configuration {
   
   // Extension-specific configurations (added by extensions when registered)
   // Example: xml: { preserveNamespaces: true, declaration: true }
-  // Example: json: { attributePrefix: '@', highFidelity: false }
+  // Example: json: { attributePrefix: '@', arrayStrategy: 'multiple' }
+  // Example: xnode: { validateOnDeserialize: true, compactFormat: false }
   [extensionName: string]: any;
 }
 
@@ -494,13 +497,13 @@ export class AdapterExecutor {
 // }
 ```
 
-### 2.2 Main XJX Class Refactor
-**File**: `src/XJX.ts`
+### 2.2 Main XJFN Class Refactor
+**File**: `src/XJFN.ts`
 **Intent**: Simplified class focused on extension registration and fluent API
 
 ```typescript
 /**
- * Simplified XJX Class - Extension registration and fluent API
+ * Simplified XJFN Class - Extension registration and fluent API
  * 
  * Design Intent:
  * - Single registration method for all extension types
@@ -518,7 +521,7 @@ import { AdapterExecutor, Adapter } from './core/adapter';
 import { ValidationError } from './core/error';
 import { Logger, LoggerFactory } from './core/logger';
 
-export class XJX implements ExtensionContext {
+export class XJFN implements ExtensionContext {
   public xnode: XNode | null = null;
   public branchContext: BranchContext | null = null;
   public context: PipelineContext;
@@ -541,10 +544,10 @@ export class XJX implements ExtensionContext {
     // Register method on prototype
     if (implementation.isTerminal) {
       // Terminal methods return values directly
-      (XJX.prototype as any)[name] = implementation.method;
+      (XJFN.prototype as any)[name] = implementation.method;
     } else {
       // Non-terminal methods return this for chaining
-      (XJX.prototype as any)[name] = function(...args: any[]): XJX {
+      (XJFN.prototype as any)[name] = function(...args: any[]): XJFN {
         implementation.method.apply(this, args);
         return this;
       };
@@ -554,7 +557,7 @@ export class XJX implements ExtensionContext {
   // Core operations for extensions
   validateSource(): void {
     if (!this.xnode) {
-      throw new ValidationError('No source set. Call fromXml(), fromJson(), or fromXnode() first.');
+      throw new ValidationError('No source set. Call fromXml(), fromJson(), or fromXNode() first.');
     }
   }
   
@@ -566,14 +569,14 @@ export class XJX implements ExtensionContext {
 // Usage pattern for extension registration:
 //
 // // In extension files (src/adapters/xml.ts, src/extensions/functional.ts, etc.)
-// import { XJX } from '../XJX';
+// import { XJFN } from '../XJFN';
 //
 // export function fromXml(this: ExtensionContext, xml: string): void {
 //   const adapter = new XmlToXNodeAdapter();
 //   this.xnode = this.executeAdapter(adapter, xml);
 // }
 //
-// XJX.registerExtension('fromXml', { 
+// XJFN.registerExtension('fromXml', { 
 //   method: fromXml, 
 //   isTerminal: false 
 // }, {
@@ -581,7 +584,7 @@ export class XJX implements ExtensionContext {
 // });
 //
 // Export for external use
-export default XJX;
+export default XJFN;
 ```
 
 ## Phase 3: Transform Functions
@@ -826,7 +829,7 @@ import { ExtensionContext } from '../core/extension';
 import { XNode, createCollection, addChild, cloneNode } from '../core/xnode';
 import { Transform } from '../transforms';
 import { traverseTree, TreeVisitor } from '../core/traversal';
-import { XJX } from '../XJX';
+import { XJFN } from '../XJFN';
 
 // Filter - maintains hierarchy, removes non-matching nodes
 export function filter(this: ExtensionContext, predicate: (node: XNode) => boolean): void {
@@ -1093,7 +1096,7 @@ import { XNode, XNodeType, createRecord, createField, createComment, createInstr
 import { PipelineContext } from '../core/context';
 import { DOM } from '../core/dom';
 import { ValidationError, ProcessingError } from '../core/error';
-import { XJX } from '../XJX';
+import { XJFN } from '../XJFN';
 
 // XML-specific configuration
 export interface XmlConfig {
@@ -1929,7 +1932,7 @@ XJFN.registerExtension('toXNodeString', { method: toXNodeString, isTerminal: tru
 import { ExtensionContext } from '../core/extension';
 import { Configuration } from '../core/config';
 import { LogLevel, LoggerFactory } from '../core/logger';
-import { XJX } from '../XJX';
+import { XJFN } from '../XJFN';
 
 export function withConfig(this: ExtensionContext, config: Partial<Configuration>): void {
   // Validate input
@@ -1956,7 +1959,7 @@ export function withConfig(this: ExtensionContext, config: Partial<Configuration
     if (changedPreservation.length > 0) {
       throw new Error(
         `Cannot change preservation settings (${changedPreservation.join(', ')}) after source is set. ` +
-        `Set these in the XJX constructor or before calling fromXml()/fromJson().`
+        `Set these in the XJFN constructor or before calling fromXml()/fromJson().`
       );
     }
   }
@@ -2016,23 +2019,75 @@ XJFN.registerExtension('withLogLevel', { method: withLogLevel, isTerminal: false
  */
 
 // Basic XML to JSON conversion
-const basicResult = new XJX()
+const basicResult = new XJFN()
   .fromXml('<books><book id="1"><title>Guide</title><price>29.99</price></book></books>')
   .toJson();
 
 // Access metadata about the conversion
-const xjx = new XJX()
+const xjfn = new XJFN()
   .fromXml(complexXml);
 
-console.log('Has namespaces:', xjx.context.getMetadata('xml', 'hasNamespaces'));
-console.log('Original XML length:', xjx.context.getMetadata('xml', 'originalLength'));
+console.log('Has namespaces:', xjfn.context.getMetadata('xml', 'hasNamespaces'));
+console.log('Original XML length:', xjfn.context.getMetadata('xml', 'originalLength'));
 
-const result = xjx.toJson();
+const result = xjfn.toJson();
 
 // Advanced transformation with branching and metadata tracking
-const advancedResult = new XJX()
+const advancedResult = new XJFN()
   .withConfig({ 
-    json: { attributePrefix: '
+    json: { attributePrefix: '@', preserveNumbers: true },
+    xml: { preserveNamespaces: false }
+  })
+  .fromXml(complexXml)
+  .branch(node => node.name === 'price')
+    .map(compose(
+      regex(/[^\d.]/g, ''),                    // Remove currency symbols
+      toNumber({ precision: 2 }),             // Convert to number
+      node => ({ ...node, processed: true })  // Add metadata
+    ))
+  .merge()
+  .filter(node => node.name !== 'comment')   // Remove comments
+  .toJsonString(2);
+
+// Perfect round-trip conversion using XNode serialization
+const roundTripProcessor = new XJFN()
+  .withConfig({ 
+    xml: { preserveNamespaces: true, preserveComments: true },
+    xnode: { validateOnDeserialize: true }
+  })
+  .fromXml(originalXml);
+
+// Check what was preserved
+const xmlMetadata = {
+  hasDeclaration: roundTripProcessor.context.getMetadata('xml', 'hasDeclaration'),
+  hasNamespaces: roundTripProcessor.context.getMetadata('xml', 'hasNamespaces'),
+  originalSize: roundTripProcessor.context.getMetadata('xml', 'originalLength')
+};
+
+// Serialize to XNode format for perfect preservation
+const xnodeResult = roundTripProcessor.toXNodeString(2);
+
+// Convert back with metadata-informed settings
+const backToXml = new XJFN()
+  .withConfig({ 
+    xml: { 
+      declaration: xmlMetadata.hasDeclaration,
+      encoding: 'UTF-8',
+      preserveNamespaces: xmlMetadata.hasNamespaces
+    }
+  })
+  .fromXNode(xnodeResult)
+  .toXmlString();
+
+// Functional operations with metadata inspection
+const summary = new XJFN()
+  .fromJson(data)
+  .select(node => node.name === 'product' && node.attributes?.active)
+  .reduce((stats, node) => {
+    stats.count++;
+    stats.totalPrice += Number(node.children?.find(c => c.name === 'price')?.value || 0);
+    return stats;
+  }, { count: 0, totalPrice: 0 });
 ```
 
 ### 6.3 Extension Development Pattern
@@ -2299,7 +2354,7 @@ XJFN.registerExtension('analyzeCsv', { method: analyzeCsv, isTerminal: true });
 1. **XNode System** (Phase 1) - Foundation for everything
 2. **Extension Registration** (Phase 2) - Enables all other functionality  
 3. **Functional Operations** (Phase 4) - Core API functionality
-4. **Format Adapters** (Phase 5) - Essential XML/JSON support
+4. **Format Adapters** (Phase 5) - Essential XML/JSON/XNode support
 
 ### Parallel Development
 - **Transform Functions** (Phase 3) can be developed alongside Phase 4
@@ -2314,256 +2369,4 @@ XJFN.registerExtension('analyzeCsv', { method: analyzeCsv, isTerminal: true });
 - **Perfect Round-Trip**: XNode serialization enables lossless conversions
 - **Format Flexibility**: Compact JSON for APIs, lossless XNode for archival, native XML for systems
 
-This implementation creates a clean, extensible framework where complexity lives in adapters, not the core, while providing both compact JSON representations and perfect round-trip conversion capabilities through XNode serialization., preserveNumbers: true },
-    xml: { preserveNamespaces: false }
-  })
-  .fromXml(complexXml)
-  .branch(node => node.name === 'price')
-    .map(compose(
-      regex(/[^\d.]/g, ''),                    // Remove currency symbols
-      toNumber({ precision: 2 }),             // Convert to number
-      node => ({ ...node, processed: true })  // Add metadata
-    ))
-  .merge()
-  .filter(node => node.name !== 'comment')   // Remove comments
-  .toJsonString(2);
-
-// Extension using metadata for processing decisions
-export function customProcessor(this: ExtensionContext): void {
-  this.validateSource();
-  
-  // Check if source had attributes (stored by JSON adapter)
-  const hasAttributes = this.context.getMetadata('json', 'hasAttributes');
-  
-  if (hasAttributes) {
-    // Store our own metadata
-    this.context.setMetadata('customProcessor', 'strategy', 'attribute-aware');
-    this.context.setMetadata('customProcessor', 'processedAt', new Date().toISOString());
-    
-    // Different processing for attribute-rich documents
-    // ... processing logic
-  } else {
-    this.context.setMetadata('customProcessor', 'strategy', 'simple');
-  }
-}
-
-// Functional operations with metadata inspection
-const summary = new XJX()
-  .fromJson(data)
-  .select(node => node.name === 'product' && node.attributes?.active)
-  .reduce((stats, node) => {
-    stats.count++;
-    stats.totalPrice += Number(node.children?.find(c => c.name === 'price')?.value || 0);
-    return stats;
-  }, { count: 0, totalPrice: 0 });
-
-// High-fidelity round-trip conversion with metadata preservation
-const roundTripProcessor = new XJX()
-  .withConfig({ 
-    json: { highFidelity: true, attributePrefix: '@' },
-    xml: { preserveNamespaces: true, preserveComments: true }
-  })
-  .fromXml(originalXml);
-
-// Check what was preserved
-const xmlMetadata = {
-  hasDeclaration: roundTripProcessor.context.getMetadata('xml', 'hasDeclaration'),
-  hasNamespaces: roundTripProcessor.context.getMetadata('xml', 'hasNamespaces'),
-  originalSize: roundTripProcessor.context.getMetadata('xml', 'originalLength')
-};
-
-const jsonResult = roundTripProcessor.toJson();
-
-// Convert back with metadata-informed settings
-const backToXml = new XJX()
-  .withConfig({ 
-    json: { highFidelity: true },
-    xml: { 
-      declaration: xmlMetadata.hasDeclaration,
-      encoding: 'UTF-8',
-      preserveNamespaces: xmlMetadata.hasNamespaces
-    }
-  })
-  .fromJson(jsonResult)
-  .toXmlString();
-```
-
-### 6.3 Extension Development Pattern
-
-```typescript
-/**
- * Extension Development Pattern - Template for new format adapters
- */
-
-// Example CSV adapter
-// File: src/adapters/csv.ts
-
-export interface CsvConfig {
-  delimiter: string;
-  quote: string;
-  escape: string;
-  headers: boolean;
-  skipEmptyLines: boolean;
-}
-
-export class CsvToXNodeAdapter implements Adapter<string, XNode> {
-  name = 'csv-to-xnode';
-  
-  validate(csv: string, context: PipelineContext): void {
-    if (!csv || typeof csv !== 'string') {
-      throw new ValidationError('CSV input must be a non-empty string');
-    }
-  }
-  
-  execute(csv: string, context: PipelineContext): XNode {
-    const config = context.config.csv as CsvConfig;
-    // Conversion logic here
-    return resultNode;
-  }
-}
-
-export function fromCsv(this: ExtensionContext, csv: string): void {
-  const adapter = new CsvToXNodeAdapter();
-  this.xnode = this.executeAdapter(adapter, csv);
-}
-
-export function toCsv(this: ExtensionContext): string {
-  this.validateSource();
-  const adapter = new XNodeToCsvAdapter();
-  return this.executeAdapter(adapter, this.xnode!);
-}
-
-// Register with defaults
-XJX.registerExtension('fromCsv', { method: fromCsv, isTerminal: false }, {
-  csv: {
-    delimiter: ',',
-    quote: '"',
-    escape: '"',
-    headers: true,
-    skipEmptyLines: true
-  }
-});
-
-XJX.registerExtension('toCsv', { method: toCsv, isTerminal: true });
-```
-
-## Implementation Phases
-
-### Phase 1: Core Infrastructure
-**Foundation Layer - Build core semantic system**
-
-**Core Components:**
-- [ ] Enhanced XNode system with structured attributes (`src/core/xnode.ts`)
-- [ ] Simplified PipelineContext (`src/core/context.ts`)
-- [ ] Unified extension system (`src/core/extension.ts`)
-- [ ] Configuration management (`src/core/config.ts`)
-- [ ] Adapter interface (`src/core/adapter.ts`)
-- [ ] Error handling (`src/core/error.ts`)
-- [ ] Logging system (`src/core/logger.ts`)
-- [ ] Tree traversal utilities (`src/core/traversal.ts`)
-
-**Dependencies:** DOM utilities, common utilities
-**Output:** Complete core system ready for extensions
-
-### Phase 2: Main XJX Class & Extension Registration
-**Extension Infrastructure - Build registration and execution system**
-
-**Components:**
-- [ ] Main XJX class with unified extension registration (`src/XJX.ts`)
-- [ ] Extension context implementation
-- [ ] Adapter execution framework
-- [ ] Configuration merging system
-
-**Dependencies:** Phase 1 core infrastructure
-**Output:** Working XJX class that can register and execute extensions
-
-### Phase 3: Transform Functions  
-**Value Transformation - Build pure transform functions**
-
-**Components:**
-- [ ] Transform function interface (`src/transforms/index.ts`)
-- [ ] Number transformation (`src/transforms/number.ts`)
-- [ ] Boolean transformation (`src/transforms/boolean.ts`) 
-- [ ] Regex transformation (`src/transforms/regex.ts`)
-- [ ] Composition utilities (`src/transforms/compose.ts`)
-
-**Dependencies:** Phase 1 XNode system
-**Output:** Complete transform function library for use with map()
-
-### Phase 4: Functional Operations
-**Tree Manipulation - Build functional API operations**
-
-**Components:**
-- [ ] filter() operation (`src/extensions/functional.ts`)
-- [ ] map() operation  
-- [ ] select() operation
-- [ ] branch()/merge() operations
-- [ ] reduce() operation
-- [ ] Tree traversal and path utilities
-
-**Dependencies:** Phase 1 core + Phase 2 extension system + Phase 3 transforms
-**Output:** Complete functional API (filter, map, select, branch, merge, reduce)
-
-### Phase 5: Format Adapters
-**Format Conversion - Build self-contained format adapters**
-
-**XML Adapter:**
-- [ ] XML to XNode conversion (`src/adapters/xml.ts`)
-- [ ] XNode to XML conversion
-- [ ] Extension methods (fromXml, toXml, toXmlString)
-- [ ] XML-specific configuration
-
-**JSON Adapter:**
-- [ ] JSON to XNode conversion (`src/adapters/json.ts`)
-- [ ] XNode to JSON conversion  
-- [ ] Extension methods (fromJson, toJson, toJsonString)
-- [ ] JSON-specific configuration with high-fidelity support
-
-**Dependencies:** Phase 2 extension system + Phase 1 adapters
-**Output:** Complete XML and JSON format support
-
-### Phase 6: Configuration Extensions
-**Configuration API - Build configuration management extensions**
-
-**Components:**
-- [ ] withConfig() extension (`src/extensions/config.ts`)
-- [ ] withLogLevel() extension
-- [ ] Configuration validation and merging
-
-**Dependencies:** Phase 2 extension system
-**Output:** Complete configuration API
-
-### Phase 7: Integration & Exports
-**Public API - Assemble complete library**
-
-**Components:**
-- [ ] Main index.ts with all exports (`src/index.ts`)
-- [ ] Adapter index (`src/adapters/index.ts`)
-- [ ] Transform index (`src/transforms/index.ts`)
-- [ ] Extension auto-registration
-- [ ] TypeScript declarations
-
-**Dependencies:** All previous phases
-**Output:** Complete, usable XJX library
-
-## Implementation Priorities
-
-### Critical Path
-1. **XNode System** (Phase 1) - Foundation for everything
-2. **Extension Registration** (Phase 2) - Enables all other functionality  
-3. **Functional Operations** (Phase 4) - Core API functionality
-4. **Format Adapters** (Phase 5) - Essential XML/JSON support
-
-### Parallel Development
-- **Transform Functions** (Phase 3) can be developed alongside Phase 4
-- **Configuration Extensions** (Phase 6) can be developed alongside Phase 5
-- **Integration** (Phase 7) happens after all components are complete
-
-### Success Criteria
-- **Clean Architecture**: Clear separation between core and adapters
-- **Extensibility**: New format adapters can be added by implementing Adapter interface
-- **Consistency**: All extensions follow same registration and execution pattern
-- **Simplicity**: Core system is minimal and format-neutral
-- **Functionality**: Complete API matches intended design
-
-This implementation creates a clean, extensible framework where complexity lives in adapters, not the core, while providing the excellent semantic foundation and fluent API you envisioned.
+This implementation creates a clean, extensible framework where complexity lives in adapters, not the core, while providing both compact JSON representations and perfect round-trip conversion capabilities through XNode serialization.
