@@ -67,35 +67,42 @@ export function filter(this: ExtensionContext, predicate: (node: XNode) => boole
   this.validateSource();
   this.context.logOperation('filter');
   
-  const visitor: TreeVisitor<XNode | null> = {
-    visit: (node: XNode, ctx: TraversalContext): XNode | null => {
-      // Let predicate errors propagate (fail fast)
-      return predicate(node) ? this.context.cloneNode(node, false) : null;
-    },
+  // Recursive filter implementation for clarity
+  const filterNode = (node: XNode): XNode | null => {
+    // Let predicate errors propagate (fail fast)
+    const nodeMatches = predicate(node);
     
-    combineResults: (parent: XNode | null, children: (XNode | null)[]): XNode | null => {
-      const validChildren = children.filter(child => child !== null) as XNode[];
-      
-      // Keep parent if it matches OR has valid children
-      if (parent && (validChildren.length > 0 || predicate(parent))) {
-        const result = { ...parent };
-        
-        if (validChildren.length > 0) {
-          result.children = validChildren;
-          validChildren.forEach(child => child.parent = result);
+    // Process children first
+    const filteredChildren: XNode[] = [];
+    if (node.children) {
+      for (const child of node.children) {
+        const filteredChild = filterNode(child);
+        if (filteredChild) {
+          filteredChildren.push(filteredChild);
         }
-        
-        return result;
+      }
+    }
+    
+    // Keep node if it matches OR has matching children
+    if (nodeMatches || filteredChildren.length > 0) {
+      const result = this.context.cloneNode(node, false);
+      
+      if (filteredChildren.length > 0) {
+        result.children = filteredChildren;
+        filteredChildren.forEach(child => {
+          child.parent = result;
+        });
+      } else {
+        result.children = [];
       }
       
-      return null;
+      return result;
     }
+    
+    return null;
   };
   
-  const result = traverseTree(this.xnode!, visitor, { 
-    order: 'post', 
-    context: this.context 
-  });
+  const result = filterNode(this.xnode!);
   
   // If nothing matches, create empty results container
   this.xnode = result || createCollection(this.context.config.fragmentRoot);

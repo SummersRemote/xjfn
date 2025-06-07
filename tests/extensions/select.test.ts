@@ -71,7 +71,8 @@ describe('select() operation', () => {
       expect(xjfn.xnode!.name).toBe('results'); // Default fragmentRoot
       
       const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(7); // All field nodes from the tree
+      // Actual field count: book1(3) + book2(3) + author(2) + category(2) = 10 fields
+      expect(children.length).toBe(10);
       expect(children.every(child => child.type === XNodeType.FIELD)).toBe(true);
     });
 
@@ -111,6 +112,19 @@ describe('select() operation', () => {
       const children = xjfn.xnode!.children || [];
       expect(children.length).toBe(3); // 2 books + 1 author
       expect(children.every(child => hasAttributes(child))).toBe(true);
+    });
+
+    it('should select by name matching specific fields', () => {
+      const tree = createTestTree();
+      xjfn.xnode = tree;
+      
+      xjfn.select(node => node.name === 'title');
+      
+      const children = xjfn.xnode!.children || [];
+      expect(children.length).toBe(2); // Two title fields
+      expect(children.every(child => child.name === 'title')).toBe(true);
+      expect(children[0].value).toBe('Guide');
+      expect(children[1].value).toBe('Manual');
     });
   });
 
@@ -303,7 +317,7 @@ describe('select() operation', () => {
       const tree = createTestTree();
       xjfn.xnode = tree;
       
-      // Select all fields, then filter by name
+      // Select all fields, then filter by name to get only title fields
       const result = xjfn
         .select(node => node.type === XNodeType.FIELD)
         .filter(node => node.name === 'title');

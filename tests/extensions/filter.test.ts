@@ -14,6 +14,7 @@ import {
   createField, 
   addChild 
 } from '../../src/core/xnode';
+import { ValidationError } from '../../src/core/error';
 
 // Import extension to register methods
 import '../../src/extensions/functional';
@@ -94,6 +95,23 @@ describe('filter() operation', () => {
       
       const book = children[0];
       expect(book.children?.some(child => child.value === 'true')).toBe(true);
+    });
+
+    it('should filter specific field names', () => {
+      const tree = createTestTree();
+      xjfn.xnode = tree;
+      
+      xjfn.filter(node => node.name === 'title');
+      
+      // Should keep root and both books (because they contain title fields)
+      const children = xjfn.xnode!.children || [];
+      expect(children.length).toBe(2); // Both books should be kept
+      
+      // Each book should only have title field
+      children.forEach(book => {
+        expect(book.children?.length).toBe(1);
+        expect(book.children?.[0].name).toBe('title');
+      });
     });
   });
 
@@ -200,7 +218,10 @@ describe('filter() operation', () => {
       
       expect(() => {
         (xjfn as any).filter('not a function');
-      }).toThrow();
+      }).toThrow(ValidationError);
+      expect(() => {
+        (xjfn as any).filter('not a function');
+      }).toThrow('Filter predicate must be a function');
     });
   });
 

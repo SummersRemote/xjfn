@@ -228,7 +228,7 @@ describe('branch() operation', () => {
       
       // Second branch/merge cycle
       xjfn.branch(node => node.name === 'item')
-        .map(node => ({ ...node, value: (node.value as string).toUpperCase() }))
+        .map(node => ({ ...node, value: (node.value ?? '').toString().toUpperCase()}))
         .merge();
       
       const items = xjfn.xnode!.children!.filter(child => child.name === 'item');

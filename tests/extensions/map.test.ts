@@ -15,10 +15,10 @@ import {
   addChild 
 } from '../../src/core/xnode';
 import { Transform } from '../../src/transforms';
+import { ValidationError } from '../../src/core/error';
 
 // Import extensions to register methods
 import '../../src/extensions/functional';
-import '../../src/transforms'; // For transform functions
 
 describe('map() operation', () => {
   let xjfn: XJFN;
@@ -236,7 +236,10 @@ describe('map() operation', () => {
       
       expect(() => {
         (xjfn as any).map('not a function');
-      }).toThrow();
+      }).toThrow(ValidationError);
+      expect(() => {
+        (xjfn as any).map('not a function');
+      }).toThrow('Map transform must be a function');
     });
   });
 
