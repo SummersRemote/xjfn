@@ -3,7 +3,8 @@
  * 
  * Design Intent:
  * - All operations use single traverseTree algorithm for consistency
- * - Fail-fast error handling with clear error propagation
+ * - API boundary parameter validation with clear error messages
+ * - Fail-fast error handling - let predicate/transform errors propagate
  * - Simple branch/merge without nesting support
  * - Pure functional approach with immutable operations
  * - Clear separation between selection and transformation
@@ -20,6 +21,7 @@ import {
   replaceNodeAtPath,
   removeNodeAtPath 
 } from '../core/traversal';
+import { ValidationError } from '../core/error';
 import { XJFN } from '../XJFN';
 
 // --- Filter Operation ---
@@ -32,6 +34,7 @@ import { XJFN } from '../XJFN';
  * 
  * @param this Extension context
  * @param predicate Function to test each node - return true to keep, false to remove
+ * @throws ValidationError if predicate is not a function
  * @throws Error if predicate fails (fail fast)
  * 
  * @example
@@ -56,12 +59,17 @@ import { XJFN } from '../XJFN';
  * ```
  */
 export function filter(this: ExtensionContext, predicate: (node: XNode) => boolean): void {
+  // API boundary validation
+  if (typeof predicate !== 'function') {
+    throw new ValidationError('Filter predicate must be a function');
+  }
+  
   this.validateSource();
   this.context.logOperation('filter');
   
   const visitor: TreeVisitor<XNode | null> = {
     visit: (node: XNode, ctx: TraversalContext): XNode | null => {
-      // Test predicate - let errors propagate (fail fast)
+      // Let predicate errors propagate (fail fast)
       return predicate(node) ? this.context.cloneNode(node, false) : null;
     },
     
@@ -103,6 +111,7 @@ export function filter(this: ExtensionContext, predicate: (node: XNode) => boole
  * 
  * @param this Extension context
  * @param transform Pure function that transforms XNode to XNode
+ * @throws ValidationError if transform is not a function
  * @throws Error if transform fails (fail fast)
  * 
  * @example
@@ -127,12 +136,17 @@ export function filter(this: ExtensionContext, predicate: (node: XNode) => boole
  * ```
  */
 export function map(this: ExtensionContext, transform: Transform): void {
+  // API boundary validation
+  if (typeof transform !== 'function') {
+    throw new ValidationError('Map transform must be a function');
+  }
+  
   this.validateSource();
   this.context.logOperation('map');
   
   const visitor: TreeVisitor<XNode> = {
     visit: (node: XNode, ctx: TraversalContext): XNode => {
-      // Apply transform - let errors propagate (fail fast)
+      // Let transform errors propagate (fail fast)
       return transform(node);
     },
     
@@ -164,6 +178,7 @@ export function map(this: ExtensionContext, transform: Transform): void {
  * 
  * @param this Extension context
  * @param predicate Function to test each node - return true to select
+ * @throws ValidationError if predicate is not a function
  * @throws Error if predicate fails (fail fast)
  * 
  * @example
@@ -185,6 +200,11 @@ export function map(this: ExtensionContext, transform: Transform): void {
  * ```
  */
 export function select(this: ExtensionContext, predicate: (node: XNode) => boolean): void {
+  // API boundary validation
+  if (typeof predicate !== 'function') {
+    throw new ValidationError('Select predicate must be a function');
+  }
+  
   this.validateSource();
   this.context.logOperation('select');
   
@@ -192,7 +212,7 @@ export function select(this: ExtensionContext, predicate: (node: XNode) => boole
   
   const visitor: TreeVisitor<void> = {
     visit: (node: XNode, ctx: TraversalContext): void => {
-      // Test predicate and collect matching nodes - let errors propagate (fail fast)
+      // Let predicate errors propagate (fail fast)
       if (predicate(node)) {
         selectedNodes.push(this.context.cloneNode(node, true));
       }
@@ -222,6 +242,7 @@ export function select(this: ExtensionContext, predicate: (node: XNode) => boole
  * 
  * @param this Extension context
  * @param predicate Function to test each node - return true to branch
+ * @throws ValidationError if predicate is not a function
  * @throws Error if already in a branch or if predicate fails (fail fast)
  * 
  * @example
@@ -243,6 +264,11 @@ export function select(this: ExtensionContext, predicate: (node: XNode) => boole
  * ```
  */
 export function branch(this: ExtensionContext, predicate: (node: XNode) => boolean): void {
+  // API boundary validation
+  if (typeof predicate !== 'function') {
+    throw new ValidationError('Branch predicate must be a function');
+  }
+  
   this.validateSource();
   this.context.logOperation('branch');
   
@@ -365,6 +391,7 @@ export function merge(this: ExtensionContext): void {
  * @param reducer Function that accumulates values (accumulator, node) => newAccumulator
  * @param initialValue Starting value for accumulation
  * @returns Final accumulated value
+ * @throws ValidationError if reducer is not a function
  * @throws Error if reducer fails (fail fast)
  * 
  * @example
@@ -397,6 +424,11 @@ export function reduce<T>(
   reducer: (accumulator: T, node: XNode) => T,
   initialValue: T
 ): T {
+  // API boundary validation
+  if (typeof reducer !== 'function') {
+    throw new ValidationError('Reduce reducer must be a function');
+  }
+  
   this.validateSource();
   this.context.logOperation('reduce');
   
@@ -404,7 +436,7 @@ export function reduce<T>(
   
   const visitor: TreeVisitor<void> = {
     visit: (node: XNode, ctx: TraversalContext): void => {
-      // Apply reducer - let errors propagate (fail fast)
+      // Let reducer errors propagate (fail fast)
       accumulator = reducer(accumulator, node);
     }
   };

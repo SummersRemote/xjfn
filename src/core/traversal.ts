@@ -6,7 +6,7 @@
  * - Pre-order, post-order, or both traversal modes
  * - Path-based node manipulation for branch/merge operations
  * - Visitor pattern for flexible tree processing
- * - Consistent error handling and logging
+ * - Fail-fast error handling - let visitor/predicate errors propagate
  */
 
 import { XNode } from './xnode';
@@ -98,7 +98,7 @@ export interface TraversalOptions {
  * 
  * This single function handles all tree walking needs:
  * - Pre-order, post-order, or both
- * - Automatic error handling and logging
+ * - Fail-fast error handling (errors propagate immediately)
  * - Path tracking for branch operations
  * - Visitor pattern for flexible processing
  * 
@@ -106,6 +106,7 @@ export interface TraversalOptions {
  * @param visitor Visitor to process each node
  * @param options Traversal configuration
  * @returns Result from visiting the root node
+ * @throws Error if visitor fails (fail fast)
  * 
  * @example
  * ```typescript
@@ -131,13 +132,13 @@ export function traverseTree<T>(
 ): T {
   const { order, context } = options;
   
+  context.logger.debug('Starting tree traversal', {
+    rootNode: node.name,
+    rootType: node.type,
+    order
+  });
+  
   try {
-    context.logger.debug('Starting tree traversal', {
-      rootNode: node.name,
-      rootType: node.type,
-      order
-    });
-    
     const result = traverseNodeRecursive(node, visitor, options, {
       path: [],
       depth: 0,
@@ -151,18 +152,19 @@ export function traverseTree<T>(
     
   } catch (err) {
     context.logError('tree-traversal', err as Error);
-    throw err;
+    throw err; // Re-throw to maintain fail-fast behavior
   }
 }
 
 /**
- * Recursive traversal implementation
+ * Recursive traversal implementation with fail-fast error handling
  * 
  * @param node Current node
  * @param visitor Visitor to process nodes
  * @param options Traversal options
  * @param traversalContext Current traversal context
  * @returns Result from visiting this node
+ * @throws Error if visitor fails (fail fast)
  */
 function traverseNodeRecursive<T>(
   node: XNode,
@@ -175,81 +177,44 @@ function traverseNodeRecursive<T>(
   let preResult: T | undefined;
   let postResult: T | undefined;
   
-  try {
-    // Pre-order visit
-    if (order === 'pre' || order === 'both') {
-      try {
-        preResult = visitor.visit(node, traversalContext);
-      } catch (err) {
-        traversalContext.pipelineContext.logger.warn(
-          `Error in visitor for node '${node.name}' at path [${traversalContext.path.join(',')}]:`, 
-          err
-        );
-        // Continue with traversal even if visitor fails
-        preResult = undefined;
-      }
-    }
-    
-    // Traverse children
-    const childResults: T[] = [];
-    if (node.children && node.children.length > 0) {
-      for (let i = 0; i < node.children.length; i++) {
-        const child = node.children[i];
-        const childContext: TraversalContext = {
-          path: [...traversalContext.path, i],
-          depth: traversalContext.depth + 1,
-          parent: node,
-          index: i,
-          pipelineContext: traversalContext.pipelineContext
-        };
-        
-        try {
-          const childResult = traverseNodeRecursive(child, visitor, options, childContext);
-          childResults.push(childResult);
-        } catch (err) {
-          // Log child traversal error but continue with other children
-          traversalContext.pipelineContext.logger.warn(
-            `Error traversing child at path [${childContext.path.join(',')}]:`, 
-            err
-          );
-        }
-      }
-    }
-    
-    // Post-order visit
-    if (order === 'post' || order === 'both') {
-      try {
-        postResult = visitor.visit(node, traversalContext);
-      } catch (err) {
-        traversalContext.pipelineContext.logger.warn(
-          `Error in visitor for node '${node.name}' at path [${traversalContext.path.join(',')}]:`, 
-          err
-        );
-        // Continue with traversal even if visitor fails
-        postResult = undefined;
-      }
-    }
-    
-    // Combine results if visitor provides combineResults
-    let finalResult: T;
-    if (visitor.combineResults) {
-      const mainResult = postResult !== undefined ? postResult : preResult!;
-      finalResult = visitor.combineResults(mainResult, childResults);
-    } else {
-      finalResult = postResult !== undefined ? postResult : preResult!;
-    }
-    
-    return finalResult;
-    
-  } catch (err) {
-    traversalContext.pipelineContext.logger.warn(
-      `Error processing node '${node.name}' at path [${traversalContext.path.join(',')}]:`, 
-      err
-    );
-    // Return a safe default instead of throwing
-    // This allows traversal to continue gracefully
-    throw err; // Only structural errors should propagate
+  // Pre-order visit - let errors propagate (fail fast)
+  if (order === 'pre' || order === 'both') {
+    preResult = visitor.visit(node, traversalContext);
   }
+  
+  // Traverse children - let errors propagate (fail fast)
+  const childResults: T[] = [];
+  if (node.children && node.children.length > 0) {
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i];
+      const childContext: TraversalContext = {
+        path: [...traversalContext.path, i],
+        depth: traversalContext.depth + 1,
+        parent: node,
+        index: i,
+        pipelineContext: traversalContext.pipelineContext
+      };
+      
+      const childResult = traverseNodeRecursive(child, visitor, options, childContext);
+      childResults.push(childResult);
+    }
+  }
+  
+  // Post-order visit - let errors propagate (fail fast)
+  if (order === 'post' || order === 'both') {
+    postResult = visitor.visit(node, traversalContext);
+  }
+  
+  // Combine results if visitor provides combineResults
+  let finalResult: T;
+  if (visitor.combineResults) {
+    const mainResult = postResult !== undefined ? postResult : preResult!;
+    finalResult = visitor.combineResults(mainResult, childResults);
+  } else {
+    finalResult = postResult !== undefined ? postResult : preResult!;
+  }
+  
+  return finalResult;
 }
 
 // --- Path Manipulation Utilities ---
@@ -335,10 +300,13 @@ export function getNodeAtPath(root: XNode, path: number[]): XNode | null {
 /**
  * Collect nodes matching predicate along with their paths in the tree
  * 
+ * Uses fail-fast error handling - predicate errors propagate immediately.
+ * 
  * @param root Root node to search from
  * @param predicate Function to test each node
  * @param context Pipeline context for logging
  * @returns Object containing matching nodes, their indices, and paths
+ * @throws Error if predicate fails (fail fast)
  * 
  * @example
  * ```typescript
@@ -362,14 +330,11 @@ export function collectNodesWithPaths(
   
   const visitor: TreeVisitor<void> = {
     visit: (node, traversalContext) => {
-      try {
-        if (predicate(node)) {
-          results.push(node);
-          indices.push(results.length - 1);
-          paths.push([...traversalContext.path]);
-        }
-      } catch (err) {
-        context.logger.warn(`Error evaluating predicate on node: ${node.name}`, err);
+      // Let predicate errors propagate (fail fast)
+      if (predicate(node)) {
+        results.push(node);
+        indices.push(results.length - 1);
+        paths.push([...traversalContext.path]);
       }
     }
   };

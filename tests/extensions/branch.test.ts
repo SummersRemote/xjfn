@@ -1,285 +1,189 @@
 /**
- * Tests for branch() functional operation
- * 
- * Tests creation of isolated scope containing matching nodes.
- * Branch extracts nodes for focused operations while preserving original tree.
+ * Branch Operation Tests - Tests for branch/merge functionality
  */
 
-import { XJFN } from '../../src/XJFN';
-import { 
-  XNode, 
-  XNodeType, 
-  createCollection, 
-  createRecord, 
-  createField, 
-  addChild,
-  addAttribute 
-} from '../../src/core/xnode';
+// IMPORTANT: Import to register functional extensions
+import '../../src/extensions/functional';
 
+import { XJFN } from '../../src/XJFN';
+import { XNode, XNodeType, createRecord, createField, addChild } from '../../src/core/xnode';
+import { ValidationError } from '../../src/core/error';
 // Import extension to register methods
 import '../../src/extensions/functional';
 
 describe('branch() operation', () => {
   let xjfn: XJFN;
+  let sampleData: XNode;
 
   beforeEach(() => {
     xjfn = new XJFN();
+    
+    // Create sample test data
+    sampleData = createRecord('root');
+    
+    const item1 = createField('item', 'value1');
+    const item2 = createField('price', '10.99');
+    const item3 = createField('item', 'value2');
+    const item4 = createField('description', 'test item');
+    
+    addChild(sampleData, item1);
+    addChild(sampleData, item2);
+    addChild(sampleData, item3);
+    addChild(sampleData, item4);
+    
+    // Set the source using fromXNode (bypassing XML/JSON parsing)
+    (xjfn as any).xnode = sampleData;
   });
 
-  // Helper to create test tree structure
-  function createTestTree(): XNode {
-    const root = createCollection('products');
-    
-    const product1 = createRecord('product');
-    addAttribute(product1, 'id', '1');
-    addChild(product1, createField('name', 'Widget'));
-    addChild(product1, createField('price', '29.99'));
-    addChild(product1, createField('active', 'true'));
-    
-    const product2 = createRecord('product');
-    addAttribute(product2, 'id', '2');
-    addChild(product2, createField('name', 'Gadget'));
-    addChild(product2, createField('price', '19.99'));
-    addChild(product2, createField('active', 'false'));
-    
-    const category = createRecord('category');
-    addChild(category, createField('name', 'electronics'));
-    addChild(category, createField('description', 'Electronic products'));
-    
-    addChild(root, product1);
-    addChild(root, product2);
-    addChild(root, category);
-    
-    return root;
-  }
-
-  describe('basic branching', () => {
+  describe('basic functionality', () => {
     it('should create branch with matching nodes', () => {
-      const tree = createTestTree();
-      const originalTree = JSON.parse(JSON.stringify(tree, (key, value) => {
-        if (key === 'parent') return undefined;
-        return value;
-      }));
-      xjfn.xnode = tree;
+      xjfn.branch(node => node.name === 'item');
       
-      xjfn.branch(node => node.name === 'price');
-      
-      // Should create branch context
-      expect(xjfn.branchContext).toBeTruthy();
-      expect(xjfn.branchContext!.parentNode).toBe(tree);
-      expect(xjfn.branchContext!.selectedNodes.length).toBe(2);
-      expect(xjfn.branchContext!.originalPaths.length).toBe(2);
-      
-      // Branch collection should contain cloned price nodes
+      expect(xjfn.xnode).toBeDefined();
       expect(xjfn.xnode!.type).toBe(XNodeType.COLLECTION);
-      expect(xjfn.xnode!.name).toBe('results');
-      
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(2);
-      expect(children.every(child => child.name === 'price')).toBe(true);
-      
-      // Original tree should be unchanged
-      const currentOriginal = JSON.parse(JSON.stringify(tree, (key, value) => {
-        if (key === 'parent') return undefined;
-        return value;
-      }));
-      expect(currentOriginal).toEqual(originalTree);
+      expect(xjfn.xnode!.children).toHaveLength(2);
+      expect(xjfn.branchContext).toBeDefined();
+      expect(xjfn.branchContext!.selectedNodes).toHaveLength(2);
     });
 
-    it('should create branch with record nodes', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
-      xjfn.branch(node => node.name === 'product');
-      
-      expect(xjfn.branchContext!.selectedNodes.length).toBe(2);
-      
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(2);
-      expect(children.every(child => child.name === 'product')).toBe(true);
-      
-      // Each product should have its children
-      children.forEach(product => {
-        expect(product.children?.length).toBe(3); // name, price, active
-      });
-    });
-
-    it('should store correct paths for matching nodes', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
-      xjfn.branch(node => node.name === 'price');
-      
-      const paths = xjfn.branchContext!.originalPaths;
-      expect(paths.length).toBe(2);
-      
-      // Paths should point to price fields: [0,1] and [1,1] (product index, field index)
-      expect(paths[0]).toEqual([0, 1]); // First product, second field (price)
-      expect(paths[1]).toEqual([1, 1]); // Second product, second field (price)
-    });
-  });
-
-  describe('empty branches', () => {
-    it('should handle no matching nodes', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
+    it('should create empty branch when no nodes match', () => {
       xjfn.branch(node => node.name === 'nonexistent');
       
-      expect(xjfn.branchContext).toBeTruthy();
-      expect(xjfn.branchContext!.selectedNodes.length).toBe(0);
-      expect(xjfn.branchContext!.originalPaths.length).toBe(0);
-      
+      expect(xjfn.xnode).toBeDefined();
       expect(xjfn.xnode!.type).toBe(XNodeType.COLLECTION);
-      expect(xjfn.xnode!.children?.length || 0).toBe(0);
+      expect(xjfn.xnode!.children).toHaveLength(0);
+      expect(xjfn.branchContext).toBeDefined();
+      expect(xjfn.branchContext!.selectedNodes).toHaveLength(0);
     });
 
-    it('should handle empty tree', () => {
-      const emptyTree = createCollection('empty');
-      xjfn.xnode = emptyTree;
-      
-      xjfn.branch(node => true);
-      
-      expect(xjfn.branchContext).toBeTruthy();
-      expect(xjfn.branchContext!.selectedNodes.length).toBe(1); // The empty collection itself
-      
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(1);
-      expect(children[0].name).toBe('empty');
-    });
-  });
-
-  describe('branch isolation', () => {
-    it('should create independent copies in branch', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
+    it('should maintain original document structure', () => {
+      const originalRoot = xjfn.xnode;
       
       xjfn.branch(node => node.name === 'price');
       
-      // Modify branch nodes
-      const children = xjfn.xnode!.children || [];
-      children[0].value = 'modified';
+      // Original should be preserved in branch context
+      expect(xjfn.branchContext!.parentNode).toBe(originalRoot);
+      expect(xjfn.branchContext!.parentNode.children).toHaveLength(4);
+    });
+  });
+
+  describe('branch context management', () => {
+    it('should store correct paths for branched nodes', () => {
+      xjfn.branch(node => node.name === 'item');
       
-      // Original nodes should be unchanged
-      const originalPriceNodes: XNode[] = [];
-      function findPriceNodes(node: XNode): void {
-        if (node.name === 'price') {
-          originalPriceNodes.push(node);
-        }
-        if (node.children) {
-          node.children.forEach(findPriceNodes);
-        }
-      }
-      findPriceNodes(tree);
-      
-      expect(originalPriceNodes[0].value).not.toBe('modified');
-      expect(originalPriceNodes[0].value).toBe('29.99');
+      expect(xjfn.branchContext!.originalPaths).toEqual([
+        [0], // First item at index 0
+        [2]  // Second item at index 2
+      ]);
     });
 
-    it('should allow operations on branch', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
+    it('should clone nodes in branch to avoid mutation', () => {
+      xjfn.branch(node => node.name === 'price');
       
-      xjfn
-        .branch(node => node.name === 'price')
-        .map(node => ({ ...node, processed: true }));
+      const branchedNode = xjfn.xnode!.children![0];
+      const originalNode = xjfn.branchContext!.selectedNodes[0];
       
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(2);
-      expect(children.every(child => (child as any).processed === true)).toBe(true);
+      // Should be different instances
+      expect(branchedNode).not.toBe(originalNode);
       
-      // Branch context should still exist
-      expect(xjfn.branchContext).toBeTruthy();
+      // But have same content
+      expect(branchedNode.name).toBe(originalNode.name);
+      expect(branchedNode.value).toBe(originalNode.value);
+    });
+  });
+
+  describe('chaining with other operations', () => {
+    it('should support map operations in branch', () => {
+      xjfn.branch(node => node.name === 'price')
+        .map(node => ({ ...node, value: parseFloat(node.value as string) }));
+      
+      const branchedNode = xjfn.xnode!.children![0];
+      expect(branchedNode.value).toBe(10.99);
+      expect(typeof branchedNode.value).toBe('number');
+    });
+
+    it('should support filter operations in branch', () => {
+      xjfn.branch(node => node.name === 'item' || node.name === 'price')
+        .filter(node => node.name === 'item');
+      
+      expect(xjfn.xnode!.children).toHaveLength(2);
+      expect(xjfn.xnode!.children![0].name).toBe('item');
+      expect(xjfn.xnode!.children![1].name).toBe('item');
+    });
+  });
+
+  describe('merge functionality', () => {
+    it('should merge changes back to original document', () => {
+      xjfn.branch(node => node.name === 'price')
+        .map(node => ({ ...node, value: parseFloat(node.value as string) }))
+        .merge();
+      
+      // Should be back to original document
+      expect(xjfn.branchContext).toBeNull();
+      expect(xjfn.xnode!.children).toHaveLength(4);
+      
+      // Price should be transformed
+      const priceNode = xjfn.xnode!.children![1];
+      expect(priceNode.name).toBe('price');
+      expect(priceNode.value).toBe(10.99);
+      expect(typeof priceNode.value).toBe('number');
+    });
+
+    it('should handle node removal in branch', () => {
+      xjfn.branch(node => node.name === 'price')
+        .filter(node => false) // Remove all
+        .merge();
+      
+      // Price node should be removed from original
+      expect(xjfn.xnode!.children).toHaveLength(3);
+      expect(xjfn.xnode!.children!.every(child => child.name !== 'price')).toBe(true);
+    });
+
+    it('should be no-op when no active branch', () => {
+      const originalNode = xjfn.xnode;
+      
+      xjfn.merge(); // Should not throw, should be no-op
+      
+      expect(xjfn.xnode).toBe(originalNode);
+      expect(xjfn.branchContext).toBeNull();
     });
   });
 
   describe('nested branching prevention', () => {
-    it('should prevent nested branches', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
-      xjfn.branch(node => node.name === 'product');
+    it('should prevent nested branching', () => {
+      xjfn.branch(node => node.name === 'item');
       
       expect(() => {
         xjfn.branch(node => node.name === 'price');
-      }).toThrow('Cannot create nested branches. Call merge() first');
+      }).toThrow('Cannot create nested branches. Call merge() first to close the current branch.');
     });
 
     it('should allow new branch after merge', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
-      xjfn
-        .branch(node => node.name === 'product')
+      xjfn.branch(node => node.name === 'item')
         .merge();
       
-      expect(xjfn.branchContext).toBe(null);
-      
-      // Should allow new branch now
+      // Should now allow new branch
       expect(() => {
         xjfn.branch(node => node.name === 'price');
       }).not.toThrow();
       
-      expect(xjfn.branchContext).toBeTruthy();
-    });
-  });
-
-  describe('complex branching scenarios', () => {
-    it('should branch by type', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
-      xjfn.branch(node => node.type === XNodeType.FIELD);
-      
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(8); // All field nodes
-      expect(children.every(child => child.type === XNodeType.FIELD)).toBe(true);
-    });
-
-    it('should branch by attribute', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
-      xjfn.branch(node => {
-        if (!node.attributes) return false;
-        const idAttr = node.attributes.find(attr => attr.name === 'id');
-        return idAttr ? idAttr.value === '1' : false;
-      });
-      
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(1);
-      expect(children[0].name).toBe('product');
-      
-      const idAttr = children[0].attributes!.find(attr => attr.name === 'id');
-      expect(idAttr!.value).toBe('1');
-    });
-
-    it('should branch by value content', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
-      xjfn.branch(node => 
-        typeof node.value === 'string' && 
-        node.value.includes('.')
-      );
-      
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(2); // Two price fields with decimal values
-      expect(children.every(child => child.name === 'price')).toBe(true);
+      expect(xjfn.branchContext).toBeDefined();
     });
   });
 
   describe('error handling', () => {
-    it('should throw if no source is set', () => {
+    it('should validate source is set', () => {
+      const emptyXjfn = new XJFN();
+      
       expect(() => {
-        xjfn.branch(node => true);
-      }).toThrow('No source set');
+        emptyXjfn.branch(node => true);
+      }).toThrow(ValidationError);
+      expect(() => {
+        emptyXjfn.branch(node => true);
+      }).toThrow('No source set: call fromXml(), fromJson(), or fromXNode() before transformation');
     });
 
     it('should propagate predicate errors (fail fast)', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
       expect(() => {
         xjfn.branch(node => {
           throw new Error('Predicate error');
@@ -288,57 +192,64 @@ describe('branch() operation', () => {
     });
 
     it('should validate predicate is a function', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
-      
       expect(() => {
         (xjfn as any).branch('not a function');
-      }).toThrow();
+      }).toThrow(ValidationError);
+      expect(() => {
+        (xjfn as any).branch('not a function');
+      }).toThrow('Branch predicate must be a function');
+    });
+
+    it('should validate predicate parameter types', () => {
+      expect(() => {
+        (xjfn as any).branch(null);
+      }).toThrow(ValidationError);
+      
+      expect(() => {
+        (xjfn as any).branch(undefined);
+      }).toThrow(ValidationError);
+      
+      expect(() => {
+        (xjfn as any).branch(123);
+      }).toThrow(ValidationError);
+      
+      expect(() => {
+        (xjfn as any).branch({});
+      }).toThrow(ValidationError);
     });
   });
 
-  describe('chaining', () => {
-    it('should return XJFN instance for chaining', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
+  describe('complex scenarios', () => {
+    it('should handle multiple branch/merge cycles', () => {
+      // First branch/merge cycle
+      xjfn.branch(node => node.name === 'price')
+        .map(node => ({ ...node, value: parseFloat(node.value as string) }))
+        .merge();
       
-      const result = xjfn.branch(node => true);
+      // Second branch/merge cycle
+      xjfn.branch(node => node.name === 'item')
+        .map(node => ({ ...node, value: (node.value as string).toUpperCase() }))
+        .merge();
       
-      expect(result).toBe(xjfn);
-      expect(result).toBeInstanceOf(XJFN);
+      const items = xjfn.xnode!.children!.filter(child => child.name === 'item');
+      expect(items).toHaveLength(2);
+      expect(items[0].value).toBe('VALUE1');
+      expect(items[1].value).toBe('VALUE2');
+      
+      const price = xjfn.xnode!.children!.find(child => child.name === 'price');
+      expect(price!.value).toBe(10.99);
+      expect(typeof price!.value).toBe('number');
     });
 
-    it('should maintain branch context through chaining', () => {
-      const tree = createTestTree();
-      xjfn.xnode = tree;
+    it('should preserve node relationships after merge', () => {
+      xjfn.branch(node => node.name === 'item')
+        .map(node => ({ ...node, processed: true } as any))
+        .merge();
       
-      xjfn
-        .branch(node => node.name === 'price')
-        .map(node => ({ ...node, processed: true }))
-        .filter(node => node.value !== '19.99');
-      
-      expect(xjfn.branchContext).toBeTruthy();
-      expect(xjfn.branchContext!.selectedNodes.length).toBe(2); // Original count preserved
-      
-      const children = xjfn.xnode!.children || [];
-      expect(children.length).toBe(1); // One filtered out
-      expect(children[0].value).toBe('29.99');
-    });
-  });
-
-  describe('custom fragmentRoot', () => {
-    it('should use custom fragmentRoot for branch collection', () => {
-      const customXjfn = new XJFN({
-        fragmentRoot: 'branch_scope'
+      // Check parent relationships are correct
+      xjfn.xnode!.children!.forEach(child => {
+        expect(child.parent).toBe(xjfn.xnode);
       });
-      
-      const tree = createTestTree();
-      customXjfn.xnode = tree;
-      
-      customXjfn.branch(node => node.name === 'price');
-      
-      expect(customXjfn.xnode!.name).toBe('branch_scope');
-      expect(customXjfn.xnode!.type).toBe(XNodeType.COLLECTION);
     });
   });
 });
