@@ -9,7 +9,7 @@
  * - Transforms both node values and attributes by default
  */
 
-import { XNode, XNodeAttribute, Primitive } from '../core/xnode';
+import { XNode } from '../core/xnode';
 import { Transform, TransformTarget } from './index';
 
 /**

@@ -4,8 +4,8 @@
  * Integrated with existing ExtensionContext for compatibility
  */
 
-import { ExtensionContext, BranchContext } from '../core/extension';
-import { XNode, XNodeType, createCollection, addChild } from '../core/xnode';
+import { ExtensionContext } from '../core/extension';
+import { XNode, createCollection, addChild } from '../core/xnode';
 import { Transform } from '../transforms';
 import { ValidationError } from '../core/error';
 import { XJFN } from '../XJFN';
@@ -121,7 +121,7 @@ const filterStage: PipelineStage<{tree: XNode, predicate: (node: XNode) => boole
 
 const mapStage: PipelineStage<{tree: XNode, transform: Transform}, XNode> = {
   name: 'map',
-  execute: ({ tree, transform }, context) => {
+  execute: ({ tree, transform }, _context) => {
     const mapNode = (node: XNode): XNode => {
       const transformed = transform(node);
       
@@ -203,7 +203,7 @@ const branchStage: PipelineStage<{tree: XNode, predicate: (node: XNode) => boole
 
 const mergeStage: PipelineStage<{original: XNode, modified: XNode[], paths: number[][]}, XNode> = {
   name: 'merge',
-  execute: ({ original, modified, paths }, context) => {
+  execute: ({ original, modified, paths }, _context) => {
     if (paths.length === 0) return original;
     
     const result = cloneNodeSimple(original, true);
@@ -235,7 +235,7 @@ const mergeStage: PipelineStage<{original: XNode, modified: XNode[], paths: numb
 
 const reduceStage: PipelineStage<{tree: XNode, reducer: (acc: any, node: XNode) => any, initial: any}, any> = {
   name: 'reduce',
-  execute: ({ tree, reducer, initial }, context) => {
+  execute: ({ tree, reducer, initial }, _context) => {
     let accumulator = initial;
     
     const visitNode = (node: XNode) => {

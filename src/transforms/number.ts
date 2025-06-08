@@ -9,7 +9,7 @@
  * - Transforms both node values and attributes by default
  */
 
-import { XNode, XNodeAttribute, Primitive } from '../core/xnode';
+import { XNode, Primitive } from '../core/xnode';
 import { Transform, TransformTarget } from './index';
 
 /**
@@ -78,7 +78,6 @@ export function toNumber(options: NumberTransformOptions = {}): Transform {
   const config = {
     transformValue: true,
     transformAttributes: true,
-    precision: undefined,
     decimalSeparator: '.',
     thousandsSeparator: ',',
     integers: true,

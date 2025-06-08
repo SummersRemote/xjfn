@@ -128,7 +128,7 @@ export class Extension {
    * Extension.registerTerminal('toYaml', toYaml);
    * ```
    */
-  static registerTerminal(name: string, method: (this: ExtensionContext, ...args: any[]) => any): void {
+  static registerTerminal(_name: string, _method: (this: ExtensionContext, ...args: any[]) => any): void {
     throw new Error('Use XJFN.registerExtension instead');
   }
 
@@ -149,7 +149,7 @@ export class Extension {
    * Extension.registerNonTerminal('withFormat', withFormat);
    * ```
    */
-  static registerNonTerminal(name: string, method: (this: ExtensionContext, ...args: any[]) => void): void {
+  static registerNonTerminal(_name: string, _method: (this: ExtensionContext, ...args: any[]) => void): void {
     throw new Error('Use XJFN.registerExtension instead');
   }
 }

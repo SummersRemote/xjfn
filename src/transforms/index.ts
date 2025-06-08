@@ -78,15 +78,11 @@ export function compose(...transforms: Transform[]): Transform {
 }
 
 // Export transform implementations
-export {
-  toNumber,
-  NumberTransformOptions
-} from './number';
+export { toNumber } from './number';
+export type { NumberTransformOptions } from './number';
 
-export {
-  toBoolean,
-  BooleanTransformOptions
-} from './boolean';
+export { toBoolean } from './boolean';
+export type { BooleanTransformOptions } from './boolean';
 
 export {
   regex

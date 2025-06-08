@@ -228,10 +228,16 @@ export function addAttribute(
   
   const attr: XNodeAttribute = {
     name,
-    value,
-    namespace: options?.namespace,
-    label: options?.label
+    value
   };
+  
+  if (options?.namespace) {
+    attr.namespace = options.namespace;
+  }
+  
+  if (options?.label) {
+    attr.label = options.label;
+  }
   
   node.attributes.push(attr);
   return node;
@@ -247,25 +253,45 @@ export function addAttribute(
 export function cloneNode(node: XNode, deep: boolean = false): XNode {
   if (!deep) {
     // Shallow clone - exclude parent, children, and attributes
-    return {
+    const clone: XNode = {
       type: node.type,
-      name: node.name,
-      value: node.value,
-      namespace: node.namespace,
-      label: node.label,
-      id: node.id
+      name: node.name
     };
+    
+    if (node.value !== undefined) {
+      clone.value = node.value;
+    }
+    if (node.namespace !== undefined) {
+      clone.namespace = node.namespace;
+    }
+    if (node.label !== undefined) {
+      clone.label = node.label;
+    }
+    if (node.id !== undefined) {
+      clone.id = node.id;
+    }
+    
+    return clone;
   }
   
   // Deep clone
   const clone: XNode = {
     type: node.type,
-    name: node.name,
-    value: node.value,
-    namespace: node.namespace,
-    label: node.label,
-    id: node.id
+    name: node.name
   };
+  
+  if (node.value !== undefined) {
+    clone.value = node.value;
+  }
+  if (node.namespace !== undefined) {
+    clone.namespace = node.namespace;
+  }
+  if (node.label !== undefined) {
+    clone.label = node.label;
+  }
+  if (node.id !== undefined) {
+    clone.id = node.id;
+  }
   
   // Clone attributes if present
   if (node.attributes) {

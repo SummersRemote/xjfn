@@ -5,17 +5,18 @@
 import { LoggerFactory, LogLevel } from "../core/logger";
 const logger = LoggerFactory.create();
 
-import { XJX } from "../XJX";
 import { Configuration } from "../core/config";
-import { NonTerminalExtensionContext } from "../core/extension";
+import { ExtensionContext } from "../core/extension";
 
 /**
  * Implementation for setting core configuration options
  */
-export function withConfig(this: NonTerminalExtensionContext, config: Partial<Configuration>): void {
+export function withConfig(this: ExtensionContext, config: Partial<Configuration>): void {
   try {
-    // API boundary validation using pipeline context
-    this.pipeline.validateInput(config !== null && typeof config === 'object', "Configuration must be an object");
+    // API boundary validation
+    if (config === null || typeof config !== 'object') {
+      throw new Error("Configuration must be an object");
+    }
     
     // Skip if empty config object
     if (Object.keys(config).length === 0) {
@@ -23,44 +24,11 @@ export function withConfig(this: NonTerminalExtensionContext, config: Partial<Co
       return;
     }
     
-    // Core preservation settings that affect parsing
-    const CORE_PRESERVATION_SETTINGS = [
-      "preserveComments", 
-      "preserveInstructions", 
-      "preserveWhitespace"
-    ];
+    // Apply configuration using context config
+    this.context.config = { ...this.context.config, ...config };
     
-    if (this.xnode !== null) {
-      // Source has already been set, check for core preservation setting changes
-      const currentConfig = this.pipeline.config.get();
-      
-      // Check core preservation settings
-      const changedSettings = CORE_PRESERVATION_SETTINGS.filter(setting => {
-        return config[setting as keyof Configuration] !== undefined && 
-               config[setting as keyof Configuration] !== currentConfig[setting as keyof Configuration];
-      });
-      
-      if (changedSettings.length > 0) {
-        throw new Error(
-          `Cannot change core preservation settings (${changedSettings.join(', ')}) after source is set. ` +
-          `These settings must be configured in the XJX constructor or via withConfig() before setting a source.`
-        );
-      }
-    }
-    
-    // Apply configuration using pipeline configuration manager
-    this.pipeline.config = this.pipeline.config.merge(config);
-    
-    // Log core configuration only
-    const finalConfig = this.pipeline.config.get();
     logger.debug('Successfully applied core configuration', {
-      preserveComments: finalConfig.preserveComments,
-      preserveInstructions: finalConfig.preserveInstructions,
-      preserveWhitespace: finalConfig.preserveWhitespace,
-      highFidelity: finalConfig.highFidelity,
-      formattingIndent: finalConfig.formatting.indent,
-      formattingPretty: finalConfig.formatting.pretty,
-      fragmentRoot: typeof finalConfig.fragmentRoot === 'string' ? finalConfig.fragmentRoot : 'custom-xnode'
+      configKeys: Object.keys(config)
     });
   } catch (err) {
     if (err instanceof Error) {
@@ -73,10 +41,12 @@ export function withConfig(this: NonTerminalExtensionContext, config: Partial<Co
 /**
  * Implementation for setting the log level using unified pipeline context
  */
-export function withLogLevel(this: NonTerminalExtensionContext, level: LogLevel | string): void {
+export function withLogLevel(this: ExtensionContext, level: LogLevel | string): void {
   try {
-    // API boundary validation using pipeline context
-    this.pipeline.validateInput(level !== undefined && level !== null, "Log level must be provided");
+    // API boundary validation
+    if (level === undefined || level === null) {
+      throw new Error("Log level must be provided");
+    }
     
     // Handle string input for level
     let logLevel: LogLevel;
@@ -112,7 +82,7 @@ export function withLogLevel(this: NonTerminalExtensionContext, level: LogLevel 
    // Set the default log level
    LoggerFactory.setDefaultLevel(logLevel);
     
-    logger.info(`Log level set to ${logLevel} via pipeline context`);
+    logger.info(`Log level set to ${logLevel}`);
   } catch (err) {
     if (err instanceof Error) {
       throw err;
@@ -121,6 +91,4 @@ export function withLogLevel(this: NonTerminalExtensionContext, level: LogLevel 
   }
 }
 
-// Register the extensions with XJX
-XJX.registerNonTerminalExtension("withConfig", withConfig);
-XJX.registerNonTerminalExtension("withLogLevel", withLogLevel);
+// Extensions are registered via import in index.ts

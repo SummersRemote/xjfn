@@ -9,5 +9,5 @@
 export * from './config';
 
 // Functional extensions (core operations)
-export * from './functional-api';
+export * from './functional';
 

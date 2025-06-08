@@ -1,172 +1,86 @@
 /**
- * XJX Library - XML/JSON transformation with fluent API and semantic XNode system
+ * XJFN Library - XML/JSON/Format Neutral transformation with fluent API and semantic XNode system
  */
 
 // IMPORTANT: Register all extensions by importing adapter and extension files
-// These imports MUST be kept as they register methods on the XJX prototype
+// These imports MUST be kept as they register methods on the XJFN prototype
 import "./adapters"; // Registers all adapter extensions
 import "./extensions/config";
-import "./extensions/functional-api";
+import "./extensions/functional";
 
 // Export the main class (for instantiation)
-export { XJX } from "./XJX";
-export { default } from "./XJX";
+export { XJFN } from "./XJFN";
+export { default } from "./XJFN";
 
 // Export core configuration (format-neutral)
-export {
-  Configuration,
-  getDefaultConfig,
-  mergeConfig,
-  createConfig,
-  validateConfig
-} from "./core/config";
+export type { Configuration } from "./core/config";
+export { DEFAULT_CONFIG, createConfig, mergeGlobalDefaults } from "./core/config";
 
-// Export configuration utilities
-export {
-  getFragmentRootName,
-  shouldPrettyPrint
-} from "./core/config-utils";
-
-export {
-  // Semantic XNode model
+// Export core types and functions
+export type {
   XNode,
+  XNodeAttribute,
+  Primitive
+} from "./core/xnode";
+
+export {
   XNodeType,
-  Primitive,
   createCollection,
   createRecord,
   createField,
   createValue,
-  createAttributes,
   createComment,
   createInstruction,
   createData,
   addChild,
   addAttribute,
-  cloneNode,
-  getTextContent,
-  setTextContent,
-  getAttribute,
-  getAttributeValue,
-  hasAttributes,
-  hasChildren,
-  getNodeTypeName,
-  isCollection,
-  isRecord,
-  isField,
-  isValue,
-  isAttribute,
-  isComment,
-  isInstruction,
-  isData,
-  isPrimitive,
-  isContainer,
-  getChildrenByType,
-  getChildrenByName,
-  getChild
+  cloneNode
 } from "./core/xnode";
-
-export {
-  // Minimal transform system
-  Transform,
-  compose,
-  createResultsContainer,
-  collectNodesWithPaths,
-  replaceNodeAtPath,
-  removeNodeAtPath,
-  getNodeAtPath,
-  traverseTree,
-  TreeVisitor,
-  TraversalContext,
-  TraversalOptions
-} from "./core/tree-utils";
 
 // Export logging
 export { 
   LoggerFactory, 
-  LogLevel,
-  Logger
+  LogLevel
 } from "./core/logger";
+export type { Logger } from "./core/logger";
 
 // Export error handling
 export {
   ValidationError,
   ProcessingError,
-  XJXError,
-  validate,
-  handleError
+  XJFNError
 } from "./core/error";
 
 // Export extension context interfaces
-export {
-  TerminalExtensionContext,
-  NonTerminalExtensionContext,
-  BranchContext,
-  UnifiedExtensionContext
+export type {
+  ExtensionContext,
+  ExtensionImplementation,
+  BranchContext
 } from "./core/extension";
 
-// Export pipeline system
-export {
-  PipelineStage,
-  Adapter as UnifiedConverter,
-  Pipeline
-} from "./core/pipeline";
+// Export adapter interface
+export type { Adapter } from "./core/adapter";
+export { AdapterExecutor } from "./core/adapter";
 
-export {
-  PipelineContext,
-  PipelineContextImpl,
-  ConfigurationManager,
-  ResourceManager,
-  ClonePolicy,
-  ClonePolicies
-} from "./core/context";
-
-// Hooks system
-export {
-  SourceHooks,
-  OutputHooks,
-  NodeHooks,
-  PipelineHooks
-} from './core/hooks';
+// Export context
+export { PipelineContext } from "./core/context";
 
 // Export transform functions and creators
 export {
-  // Transform Factories
   toNumber,
   toBoolean,
   regex,
+  compose
+} from "./transforms";
 
-  // Options interfaces
+export type {
+  Transform,
   NumberTransformOptions,
-  BooleanTransformOptions,
+  BooleanTransformOptions
 } from "./transforms";
 
 // Export DOM utilities
-export {
-  DOM,
-  NodeType
-} from "./core/dom";
-
-// Export common utilities
-export {
-  deepClone,
-  deepMerge,
-  isEmpty,
-  getPath,
-  setPath
-} from "./core/common";
+export { DOM } from "./core/dom";
 
 // Export adapters for direct access
 export * as adapters from "./adapters";
-
-// Manual registration verification - this function does nothing at runtime
-// but ensures that tree-shaking doesn't remove our extension imports
-function ensureExtensionsRegistered() {
-  return [
-    "./adapters",
-    "./extensions/config",
-    "./extensions/functional-api"
-  ];
-}
-
-// This will be removed in production builds but helps ensure extensions are loaded
-ensureExtensionsRegistered();

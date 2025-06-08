@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XJFN Phase 5 - Format Adapters Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            border-radius: 5px;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .output {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .config-demo {
+            background: #9b59b6;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .metadata {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .tabs {
+            display: flex;
+            margin: 20px 0;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #bdc3c7;
+            color: #2c3e50;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 0 5px 5px 5px;
+            border: 2px solid #3498db;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .notice {
+            background: #e8f6f3;
+            border: 1px solid #16a085;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            color: #16a085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 XJFN Phase 5: Format Adapters Demo</h1>
+        
+        <div class="notice">
+            <strong>📋 Demo Overview:</strong> This page demonstrates the three self-contained format adapters: 
+            XML (native format), JSON (compact/readable), and XNode (lossless serialization). 
+            Each adapter includes rich configuration options and metadata tracking.
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('basic')">Basic Conversions</button>
+            <button class="tab" onclick="showTab('config')">Configuration Options</button>
+            <button class="tab" onclick="showTab('metadata')">Metadata Tracking</button>
+            <button class="tab" onclick="showTab('roundtrip')">Round-Trip Conversions</button>
+            <button class="tab" onclick="showTab('functional')">Functional Integration</button>
+        </div>
+
+        <div id="basic" class="tab-content active">
+            <h2>🔄 Basic Format Conversions</h2>
+            
+            <div class="demo-section">
+                <h3>XML → JSON Conversion</h3>
+                <p>Convert XML with namespaces and attributes to compact JSON:</p>
+                <button onclick="runBasicXmlToJson()">Run XML → JSON Demo</button>
+                <div id="xml-to-json-output"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>JSON → XML Conversion</h3>
+                <p>Convert JSON with attributes and arrays to well-formed XML:</p>
+                <button onclick="runBasicJsonToXml()">Run JSON → XML Demo</button>
+                <div id="json-to-xml-output"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>XNode Serialization</h3>
+                <p>Lossless semantic tree serialization for perfect round-trips:</p>
+                <button onclick="runBasicXNodeDemo()">Run XNode Serialization Demo</button>
+                <div id="xnode-demo-output"></div>
+            </div>
+        </div>
+
+        <div id="config" class="tab-content">
+            <h2>⚙️ Configuration Options</h2>
+            
+            <div class="demo-section">
+                <h3>XML Configuration Options</h3>
+                <p>Demonstrate XML adapter configuration for namespaces, formatting, and content preservation:</p>
+                <button onclick="runXmlConfigDemo()">Run XML Config Demo</button>
+                <div id="xml-config-output"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>JSON Configuration Options</h3>
+                <p>Showcase JSON adapter configuration for attributes, arrays, and type preservation:</p>
+                <button onclick="runJsonConfigDemo()">Run JSON Config Demo</button>
+                <div id="json-config-output"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>XNode Configuration Options</h3>
+                <p>Explore XNode adapter configuration for validation, metadata, and serialization:</p>
+                <button onclick="runXNodeConfigDemo()">Run XNode Config Demo</button>
+                <div id="xnode-config-output"></div>
+            </div>
+        </div>
+
+        <div id="metadata" class="tab-content">
+            <h2>📊 Metadata Tracking</h2>
+            
+            <div class="demo-section">
+                <h3>Format Intelligence</h3>
+                <p>Adapters track rich metadata for intelligent processing decisions:</p>
+                <button onclick="runMetadataDemo()">Run Metadata Demo</button>
+                <div id="metadata-output"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>Processing Hints</h3>
+                <p>Metadata enables format-aware conversions and round-trip optimization:</p>
+                <button onclick="runProcessingHintsDemo()">Run Processing Hints Demo</button>
+                <div id="processing-hints-output"></div>
+            </div>
+        </div>
+
+        <div id="roundtrip" class="tab-content">
+            <h2>🔄 Round-Trip Conversions</h2>
+            
+            <div class="demo-section">
+                <h3>Perfect Fidelity via XNode</h3>
+                <p>Demonstrate lossless round-trip conversions using XNode serialization:</p>
+                <button onclick="runRoundTripDemo()">Run Round-Trip Demo</button>
+                <div id="roundtrip-output"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>Format Bridging</h3>
+                <p>Use XNode adapter to bridge between different formats while preserving semantics:</p>
+                <button onclick="runFormatBridgingDemo()">Run Format Bridging Demo</button>
+                <div id="format-bridging-output"></div>
+            </div>
+        </div>
+
+        <div id="functional" class="tab-content">
+            <h2>⚙️ Functional Operations Integration</h2>
+            
+            <div class="demo-section">
+                <h3>Adapters + Functional Operations</h3>
+                <p>Combine format adapters with pipeline-based functional operations:</p>
+                <button onclick="runFunctionalIntegrationDemo()">Run Functional Integration Demo</button>
+                <div id="functional-output"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>Complex Transformation Pipeline</h3>
+                <p>End-to-end transformation with multiple formats and operations:</p>
+                <button onclick="runComplexPipelineDemo()">Run Complex Pipeline Demo</button>
+                <div id="complex-pipeline-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load XJFN library from dist build using ES modules -->
+    <script type="module">
+        import { XJFN } from '../dist/index.js';
+        
+        // Make XJFN available globally for the demo scripts
+        window.XJFN = XJFN;
+        
+        // Trigger a custom event when XJFN is loaded
+        window.dispatchEvent(new CustomEvent('xjfnLoaded'));
+
+        // Wait for XJFN to load before enabling demo functions
+        let xjfnLoaded = false;
+        
+        window.addEventListener('xjfnLoaded', function() {
+            xjfnLoaded = true;
+            console.log('XJFN library loaded successfully');
+            console.log('Available methods:', Object.getOwnPropertyNames(window.XJFN.prototype));
+        });
+        
+        function checkXJFNLoaded() {
+            if (!xjfnLoaded || typeof window.XJFN === 'undefined') {
+                console.log('XJFN not yet loaded:', { xjfnLoaded, hasXJFN: typeof window.XJFN });
+                return false;
+            }
+            return true;
+        }
+        
+        // Tab functionality
+        function showTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Demo functions
+        function runBasicXmlToJson() {
+            const output = document.getElementById('xml-to-json-output');
+            
+            if (!checkXJFNLoaded()) {
+                output.innerHTML = '<div class="error">XJFN library is still loading. Please wait a moment and try again.</div>';
+                return;
+            }
+            
+            try {
+                const xmlInput = `<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns:meta="urn:metadata">
+    <book meta:id="123" category="fiction">
+        <title>The Great Adventure</title>
+        <author>Jane Smith</author>
+        <price currency="USD">29.99</price>
+        <description>An exciting tale of discovery</description>
+    </book>
+    <book meta:id="456" category="science">
+        <title>Quantum Physics</title>
+        <author>Dr. Einstein</author>
+        <price currency="USD">49.99</price>
+        <description>Understanding the quantum world</description>
+    </book>
+</catalog>`;
+
+                const xjfn = new window.XJFN();
+                const result = xjfn.fromXml(xmlInput).toJsonString(2);
+                
+                output.innerHTML = `
+                    <div class="code-block">Input XML (${xmlInput.length} characters):<br>${escapeHtml(xmlInput)}</div>
+                    <div class="output">JSON Output:<br>${result}</div>
+                    <div class="metadata">Conversion successful! XML parsed and converted to JSON.</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runBasicJsonToXml() {
+            const output = document.getElementById('json-to-xml-output');
+            try {
+                const jsonInput = {
+                    catalog: {
+                        book: [
+                            {
+                                "@meta:id": "123",
+                                "@category": "fiction",
+                                title: "The Great Adventure",
+                                author: "Jane Smith",
+                                price: {
+                                    "@currency": "USD",
+                                    "#text": "29.99"
+                                },
+                                description: "An exciting tale of discovery"
+                            },
+                            {
+                                "@meta:id": "456",
+                                "@category": "science",
+                                title: "Quantum Physics",
+                                author: "Dr. Einstein",
+                                price: {
+                                    "@currency": "USD",
+                                    "#text": "49.99"
+                                },
+                                description: "Understanding the quantum world"
+                            }
+                        ]
+                    }
+                };
+
+                const xjfn = new XJFN();
+                const result = xjfn.fromJson(jsonInput).toXmlString();
+                
+                output.innerHTML = `
+                    <div class="code-block">Input JSON:<br>${escapeHtml(JSON.stringify(jsonInput, null, 2))}</div>
+                    <div class="output">XML Output:<br>${escapeHtml(result)}</div>
+                    <div class="metadata">JSON Metadata:<br>${JSON.stringify(xjfn.getJsonMetadata(), null, 2)}</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runBasicXNodeDemo() {
+            const output = document.getElementById('xnode-demo-output');
+            try {
+                const xmlInput = `<product id="123">
+    <name>Widget</name>
+    <price>19.99</price>
+    <active>true</active>
+</product>`;
+
+                const xjfn = new XJFN();
+                const serialized = xjfn.fromXml(xmlInput).toXNodeString(2);
+                
+                output.innerHTML = `
+                    <div class="code-block">Original XML:<br>${escapeHtml(xmlInput)}</div>
+                    <div class="output">XNode Serialization (lossless):<br>${serialized}</div>
+                    <div class="metadata">XNode Metadata:<br>${JSON.stringify(xjfn.getXNodeMetadata(), null, 2)}</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runXmlConfigDemo() {
+            const output = document.getElementById('xml-config-output');
+            try {
+                const xmlInput = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<root xmlns:app="http://example.com/app">
+    <!-- This is a comment -->
+    <app:data>
+        <![CDATA[Some raw data here]]>
+        <value>  spaced  </value>
+    </app:data>
+    <?processing-instruction data?>
+</root>`;
+
+                // Demo 1: Default configuration (preserves everything)
+                const xjfn1 = new XJFN();
+                const result1 = xjfn1.fromXml(xmlInput).toJsonString(2);
+
+                // Demo 2: Simplified configuration (strips namespaces, comments, etc.)
+                const xjfn2 = new XJFN({
+                    xml: {
+                        preserveNamespaces: false,
+                        preserveComments: false,
+                        preserveInstructions: false,
+                        preserveCDATA: false,
+                        normalizeWhitespace: true,
+                        declaration: false
+                    }
+                });
+                const result2 = xjfn2.fromXml(xmlInput).toJsonString(2);
+
+                output.innerHTML = `
+                    <div class="code-block">Input XML with Namespaces, Comments, CDATA:<br>${escapeHtml(xmlInput)}</div>
+                    <div class="config-demo">Default Config (preserves everything):<br>${JSON.stringify({
+                        preserveNamespaces: true,
+                        preserveComments: true,
+                        preserveInstructions: true,
+                        preserveCDATA: true,
+                        normalizeWhitespace: false,
+                        declaration: true
+                    }, null, 2)}</div>
+                    <div class="output">Result 1 (Full Preservation):<br>${result1}</div>
+                    <div class="config-demo">Simplified Config (strips extras):<br>${JSON.stringify({
+                        preserveNamespaces: false,
+                        preserveComments: false,
+                        preserveInstructions: false,
+                        preserveCDATA: false,
+                        normalizeWhitespace: true,
+                        declaration: false
+                    }, null, 2)}</div>
+                    <div class="output">Result 2 (Simplified):<br>${result2}</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runJsonConfigDemo() {
+            const output = document.getElementById('json-config-output');
+            try {
+                const jsonInput = {
+                    products: {
+                        product: [
+                            {
+                                "@id": "123",
+                                "$special": "value",
+                                "name": "Widget",
+                                "price": "19.99",
+                                "active": "true",
+                                "category": "tools"
+                            },
+                            {
+                                "@id": "456",
+                                "$special": "another",
+                                "name": "Gadget",
+                                "price": "29.99",
+                                "active": "false",
+                                "category": "tools"
+                            }
+                        ]
+                    }
+                };
+
+                // Demo 1: Default @ prefix for attributes
+                const xjfn1 = new XJFN();
+                const result1 = xjfn1.fromJson(jsonInput).toXmlString();
+
+                // Demo 2: Custom $ prefix and different array strategy
+                const xjfn2 = new XJFN({
+                    json: {
+                        attributePrefix: '$',
+                        arrayStrategy: 'always',
+                        preserveNumbers: true,
+                        preserveBooleans: true,
+                        forceArrays: ['category']
+                    }
+                });
+                const result2 = xjfn2.fromJson(jsonInput).toXmlString();
+
+                // Demo 3: Merge attributes as properties
+                const xjfn3 = new XJFN({
+                    json: {
+                        attributeStrategy: 'merge',
+                        arrayStrategy: 'never',
+                        preserveNumbers: false,
+                        preserveBooleans: false
+                    }
+                });
+                const result3 = xjfn3.fromJson(jsonInput).toXmlString();
+
+                output.innerHTML = `
+                    <div class="code-block">Input JSON with Multiple Attribute Prefixes:<br>${escapeHtml(JSON.stringify(jsonInput, null, 2))}</div>
+                    
+                    <div class="config-demo">Config 1 (Default @ prefix):<br>${JSON.stringify({
+                        attributePrefix: '@',
+                        arrayStrategy: 'smart',
+                        preserveNumbers: true,
+                        preserveBooleans: true
+                    }, null, 2)}</div>
+                    <div class="output">Result 1:<br>${escapeHtml(result1)}</div>
+                    
+                    <div class="config-demo">Config 2 ($ prefix, always arrays):<br>${JSON.stringify({
+                        attributePrefix: '$',
+                        arrayStrategy: 'always',
+                        preserveNumbers: true,
+                        preserveBooleans: true,
+                        forceArrays: ['category']
+                    }, null, 2)}</div>
+                    <div class="output">Result 2:<br>${escapeHtml(result2)}</div>
+                    
+                    <div class="config-demo">Config 3 (Merged attributes, no arrays):<br>${JSON.stringify({
+                        attributeStrategy: 'merge',
+                        arrayStrategy: 'never',
+                        preserveNumbers: false,
+                        preserveBooleans: false
+                    }, null, 2)}</div>
+                    <div class="output">Result 3:<br>${escapeHtml(result3)}</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runXNodeConfigDemo() {
+            const output = document.getElementById('xnode-config-output');
+            try {
+                const xmlInput = `<catalog>
+    <product id="123">
+        <name>Widget</name>
+        <price>19.99</price>
+    </product>
+</catalog>`;
+
+                // Demo 1: Full metadata serialization
+                const xjfn1 = new XJFN({
+                    xnode: {
+                        includeMetadata: true,
+                        preserveSourceHints: true,
+                        timestampSerialization: true,
+                        versionInfo: true
+                    }
+                });
+                const result1 = xjfn1.fromXml(xmlInput).toXNodeString(2);
+
+                // Demo 2: Compact serialization without metadata
+                const xjfn2 = new XJFN({
+                    xnode: {
+                        includeMetadata: false,
+                        preserveSourceHints: false,
+                        timestampSerialization: false,
+                        compactFormat: true,
+                        sortKeys: true
+                    }
+                });
+                const result2 = xjfn2.fromXml(xmlInput).toXNodeString(0);
+
+                // Demo 3: Validation-enabled serialization
+                const xjfn3 = new XJFN({
+                    xnode: {
+                        validateOnSerialize: true,
+                        validateOnDeserialize: true,
+                        strictTypeValidation: true,
+                        includeMetadata: true,
+                        maxDepth: 10
+                    }
+                });
+                const result3 = xjfn3.fromXml(xmlInput).toXNodeString(2);
+
+                output.innerHTML = `
+                    <div class="code-block">Input XML:<br>${escapeHtml(xmlInput)}</div>
+                    
+                    <div class="config-demo">Config 1 (Full Metadata):<br>${JSON.stringify({
+                        includeMetadata: true,
+                        preserveSourceHints: true,
+                        timestampSerialization: true,
+                        versionInfo: true
+                    }, null, 2)}</div>
+                    <div class="output">Result 1 (Rich Metadata):<br>${result1}</div>
+                    
+                    <div class="config-demo">Config 2 (Compact):<br>${JSON.stringify({
+                        includeMetadata: false,
+                        preserveSourceHints: false,
+                        timestampSerialization: false,
+                        compactFormat: true,
+                        sortKeys: true
+                    }, null, 2)}</div>
+                    <div class="output">Result 2 (Compact):<br>${result2}</div>
+                    
+                    <div class="config-demo">Config 3 (Validation Enabled):<br>${JSON.stringify({
+                        validateOnSerialize: true,
+                        validateOnDeserialize: true,
+                        strictTypeValidation: true,
+                        includeMetadata: true,
+                        maxDepth: 10
+                    }, null, 2)}</div>
+                    <div class="output">Result 3 (Validated):<br>${result3}</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runMetadataDemo() {
+            const output = document.getElementById('metadata-output');
+            try {
+                const xmlInput = `<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns:meta="urn:metadata">
+    <book meta:id="123">
+        <title>Sample Book</title>
+        <price>29.99</price>
+    </book>
+</catalog>`;
+
+                const xjfn = new XJFN();
+                
+                // Step 1: Parse XML and collect metadata
+                xjfn.fromXml(xmlInput);
+                const xmlMetadata = xjfn.getXmlMetadata();
+
+                // Step 2: Convert to JSON and collect metadata
+                const jsonResult = xjfn.toJsonString(2);
+                const jsonOutputMetadata = xjfn.getJsonMetadata ? xjfn.getJsonMetadata() : {};
+
+                // Step 3: Serialize to XNode and collect metadata
+                const xnodeResult = xjfn.toXNodeString(2);
+                const xnodeMetadata = xjfn.getXNodeMetadata();
+
+                output.innerHTML = `
+                    <div class="code-block">Processing XML with Metadata Tracking:<br>${escapeHtml(xmlInput)}</div>
+                    
+                    <div class="metadata">XML Parsing Metadata:<br>${JSON.stringify({
+                        hasDeclaration: xmlMetadata.hasDeclaration,
+                        hasNamespaces: xmlMetadata.hasNamespaces,
+                        originalLength: xmlMetadata.originalLength,
+                        rootElementName: xmlMetadata.rootElementName
+                    }, null, 2)}</div>
+                    
+                    <div class="output">Converted to JSON:<br>${jsonResult}</div>
+                    
+                    <div class="metadata">JSON Output Metadata:<br>${JSON.stringify(jsonOutputMetadata, null, 2)}</div>
+                    
+                    <div class="output">XNode Serialization:<br>${xnodeResult}</div>
+                    
+                    <div class="metadata">XNode Metadata:<br>${JSON.stringify({
+                        serializedAt: xnodeMetadata.serializedAt,
+                        rootType: xnodeMetadata.rootType,
+                        hasMetadata: xnodeMetadata.hasMetadata,
+                        maxDepth: xnodeMetadata.maxDepth
+                    }, null, 2)}</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runProcessingHintsDemo() {
+            const output = document.getElementById('processing-hints-output');
+            try {
+                const xmlWithNamespaces = `<?xml version="1.0"?>
+<catalog xmlns:meta="urn:metadata">
+    <meta:info>Namespace test</meta:info>
+    <product meta:id="123">
+        <name>Widget</name>
+    </product>
+</catalog>`;
+
+                const jsonWithAttributes = {
+                    "catalog": {
+                        "@xmlns:meta": "urn:metadata",
+                        "meta:info": "Namespace test",
+                        "product": {
+                            "@meta:id": "123",
+                            "name": "Widget"
+                        }
+                    }
+                };
+
+                // Process XML to XNode with source hints
+                const xjfn1 = new XJFN();
+                const xnodeFromXml = xjfn1.fromXml(xmlWithNamespaces).toXNodeString(2);
+
+                // Process JSON to XNode with source hints
+                const xjfn2 = new XJFN();
+                const xnodeFromJson = xjfn2.fromJson(jsonWithAttributes).toXNodeString(2);
+
+                // Demonstrate round-trip using hints
+                const xjfn3 = new XJFN();
+                const restored = xjfn3.fromXNode(xnodeFromXml).toXmlString();
+
+                output.innerHTML = `
+                    <div class="code-block">XML Input (with namespaces):<br>${escapeHtml(xmlWithNamespaces)}</div>
+                    <div class="output">XNode from XML (with source hints):<br>${xnodeFromXml}</div>
+                    
+                    <div class="code-block">JSON Input (with attributes):<br>${escapeHtml(JSON.stringify(jsonWithAttributes, null, 2))}</div>
+                    <div class="output">XNode from JSON (with source hints):<br>${xnodeFromJson}</div>
+                    
+                    <div class="code-block">Round-trip XML reconstruction using hints:<br>${escapeHtml(restored)}</div>
+                    
+                    <div class="metadata">Processing Hints Enable:
+• Format-aware conversion decisions
+• Source characteristic preservation  
+• Intelligent round-trip optimization
+• Cross-format metadata transfer
+• Debugging and troubleshooting support</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runRoundTripDemo() {
+            const output = document.getElementById('roundtrip-output');
+            try {
+                const originalXml = `<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns:meta="urn:metadata">
+    <!-- Product catalog -->
+    <book meta:id="123" category="fiction">
+        <title>The Great Adventure</title>
+        <author>Jane Smith</author>
+        <price currency="USD">29.99</price>
+        <![CDATA[Some raw data here]]>
+    </book>
+    <?xml-stylesheet type="text/xsl" href="style.xsl"?>
+</catalog>`;
+
+                // Step 1: XML → XNode (lossless serialization)
+                const xjfn1 = new XJFN({
+                    xml: { preserveNamespaces: true, preserveComments: true, preserveCDATA: true, preserveInstructions: true },
+                    xnode: { includeMetadata: true, preserveSourceHints: true }
+                });
+                const serialized = xjfn1.fromXml(originalXml).toXNodeString(2);
+
+                // Step 2: XNode → XML (perfect reconstruction)
+                const xjfn2 = new XJFN();
+                const restored = xjfn2.fromXNode(serialized).toXmlString();
+
+                // Step 3: Verify round-trip integrity
+                const isIdentical = originalXml.trim() === restored.trim();
+
+                output.innerHTML = `
+                    <div class="code-block">Original XML (${originalXml.length} chars):<br>${escapeHtml(originalXml)}</div>
+                    
+                    <div class="output">XNode Serialization (lossless):<br>${serialized}</div>
+                    
+                    <div class="code-block">Restored XML (${restored.length} chars):<br>${escapeHtml(restored)}</div>
+                    
+                    <div class="${isIdentical ? 'output' : 'error'}">Round-trip Integrity: ${isIdentical ? '✅ PERFECT' : '❌ DATA LOSS'}</div>
+                    
+                    <div class="metadata">Round-trip Benefits:
+• Perfect preservation of all XML features
+• Namespace URIs and prefixes maintained
+• Comments, CDATA, and processing instructions preserved
+• Source format hints enable intelligent reconstruction
+• Enables format bridging without data loss</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runFormatBridgingDemo() {
+            const output = document.getElementById('format-bridging-output');
+            try {
+                const xmlSource = `<products>
+    <product id="123" active="true">
+        <name>Widget</name>
+        <price>19.99</price>
+        <category>tools</category>
+    </product>
+    <product id="456" active="false">
+        <name>Gadget</name>
+        <price>29.99</price>
+        <category>electronics</category>
+    </product>
+</products>`;
+
+                // XML → XNode → JSON (via lossless bridge)
+                const xjfn1 = new XJFN();
+                const xnodeBridge = xjfn1.fromXml(xmlSource).toXNodeString(2);
+                
+                const xjfn2 = new XJFN({
+                    json: { 
+                        attributePrefix: '@',
+                        preserveNumbers: true,
+                        preserveBooleans: true,
+                        arrayStrategy: 'multiple'
+                    }
+                });
+                const jsonResult = xjfn2.fromXNode(xnodeBridge).toJsonString(2);
+
+                // JSON → XNode → XML (reverse bridge)
+                const xjfn3 = new XJFN();
+                const xmlRestored = xjfn3.fromXNode(xnodeBridge).toXmlString();
+
+                output.innerHTML = `
+                    <div class="code-block">Source XML:<br>${escapeHtml(xmlSource)}</div>
+                    
+                    <div class="output">XNode Bridge (semantic preservation):<br>${xnodeBridge}</div>
+                    
+                    <div class="output">Target JSON (via XNode bridge):<br>${jsonResult}</div>
+                    
+                    <div class="code-block">Restored XML (via XNode bridge):<br>${escapeHtml(xmlRestored)}</div>
+                    
+                    <div class="metadata">Format Bridging Benefits:
+• Lossless conversion between any supported formats
+• Semantic preservation via XNode intermediate representation
+• Multiple target formats from single source parsing
+• Perfect round-trip capabilities
+• Format-neutral data processing and transformation</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runFunctionalIntegrationDemo() {
+            const output = document.getElementById('functional-output');
+            try {
+                const xmlInput = `<products>
+    <product id="123" active="true">
+        <name>Widget</name>
+        <price>19.99</price>
+        <category>tools</category>
+    </product>
+    <product id="456" active="false">
+        <name>Gadget</name>
+        <price>29.99</price>
+        <category>electronics</category>
+    </product>
+    <product id="789" active="true">
+        <name>Hammer</name>
+        <price>15.50</price>
+        <category>tools</category>
+    </product>
+</products>`;
+
+                // Demonstrate adapter + functional operations
+                const xjfn = new XJFN({
+                    json: {
+                        attributePrefix: '@',
+                        preserveNumbers: true,
+                        arrayStrategy: 'multiple'
+                    }
+                });
+
+                // Simulate functional operations (since we don't have the full implementation)
+                xjfn.fromXml(xmlInput);
+                
+                // Filter active products
+                xjfn.filter(node => {
+                    if (node.name === 'product') {
+                        return node.attributes && node.attributes.some(attr => 
+                            attr.name === 'active' && attr.value === 'true'
+                        );
+                    }
+                    return true;
+                });
+
+                // Map to apply price increase
+                xjfn.map(node => {
+                    if (node.name === 'price') {
+                        const price = parseFloat(node.value);
+                        return { ...node, value: (price * 1.1).toFixed(2) };
+                    }
+                    return node;
+                });
+
+                const result = xjfn.toJsonString(2);
+
+                output.innerHTML = `
+                    <div class="code-block">Input XML:<br>${escapeHtml(xmlInput)}</div>
+                    
+                    <div class="config-demo">Functional Pipeline:
+1. fromXml() - Parse XML with adapter
+2. filter() - Keep only active products  
+3. map() - Apply 10% price increase
+4. toJson() - Output with JSON adapter</div>
+                    
+                    <div class="output">Final Result:<br>${result}</div>
+                    
+                    <div class="metadata">Integration Features:
+• Seamless adapter + functional operation chaining
+• Pipeline-based processing with format adapters
+• Rich configuration options throughout pipeline
+• Metadata tracking across all operations
+• Perfect compatibility with Phase 4 functional API</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function runComplexPipelineDemo() {
+            const output = document.getElementById('complex-pipeline-output');
+            try {
+                const xmlInput = `<?xml version="1.0"?>
+<catalog xmlns:meta="urn:metadata">
+    <product meta:id="123" status="active">
+        <name>Premium Widget</name>
+        <price currency="USD">29.99</price>
+        <category>tools</category>
+        <tags>
+            <tag>popular</tag>
+            <tag>bestseller</tag>
+        </tags>
+    </product>
+    <product meta:id="456" status="inactive">
+        <name>Basic Gadget</name>
+        <price currency="USD">19.99</price>
+        <category>electronics</category>
+        <tags>
+            <tag>clearance</tag>
+        </tags>
+    </product>
+</catalog>`;
+
+                // Complex transformation pipeline
+                const pipeline = new XJFN({
+                    xml: { 
+                        preserveNamespaces: true,
+                        preserveComments: true 
+                    },
+                    json: { 
+                        attributePrefix: '@',
+                        preserveNumbers: true,
+                        arrayStrategy: 'smart'
+                    },
+                    xnode: {
+                        includeMetadata: true,
+                        preserveSourceHints: true
+                    }
+                });
+
+                // Step 1: Parse and collect metadata
+                pipeline.fromXml(xmlInput);
+                const sourceMetadata = pipeline.getXmlMetadata();
+
+                // Step 2: Simulate complex transformations
+                const jsonOutput = pipeline.toJsonString(2);
+                const xnodeOutput = pipeline.toXNodeString(2);
+                
+                // Step 3: Round-trip demonstration
+                const roundTrip = new XJFN().fromXNode(xnodeOutput).toXmlString();
+
+                output.innerHTML = `
+                    <div class="code-block">Complex XML Input:<br>${escapeHtml(xmlInput)}</div>
+                    
+                    <div class="metadata">Source Analysis:
+• Has XML declaration: ${sourceMetadata.hasDeclaration}
+• Has namespaces: ${sourceMetadata.hasNamespaces}  
+• Root element: ${sourceMetadata.rootElementName}
+• Document size: ${sourceMetadata.originalLength} characters</div>
+                    
+                    <div class="output">JSON Output (API-ready):<br>${jsonOutput}</div>
+                    
+                    <div class="output">XNode Output (archival):<br>${xnodeOutput}</div>
+                    
+                    <div class="code-block">Round-trip XML:<br>${escapeHtml(roundTrip)}</div>
+                    
+                    <div class="metadata">Complex Pipeline Capabilities:
+• Multi-format input/output with single pipeline
+• Rich metadata tracking across transformations
+• Lossless round-trip via XNode serialization
+• Format-specific configuration optimization
+• Production-ready error handling and validation
+• Seamless integration with functional operations</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Utility function
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
