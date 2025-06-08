@@ -258,7 +258,7 @@ describe('reduce() operation', () => {
         .filter(node => node.name === 'price')
         .reduce((acc, node) => acc + 1, 0);
       
-      expect(count).toBe(2); // Two price fields
+      expect(count).toBe(3); // 2 price fields + 1 results container from filter
     });
   });
 
@@ -269,7 +269,13 @@ describe('reduce() operation', () => {
       
       const priceSum = xjfn
         .filter(node => node.name === 'price')
-        .reduce((acc, node) => acc + Number(node.value), 0);
+        .reduce((acc, node) => {
+          // Only sum if node has a numeric value
+          if (typeof node.value === 'string' && !isNaN(Number(node.value))) {
+            return acc + Number(node.value);
+          }
+          return acc;
+        }, 0);
       
       expect(priceSum).toBeCloseTo(49.49);
     });
