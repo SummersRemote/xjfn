@@ -135,11 +135,18 @@ const mapStage: PipelineStage<{tree: XNode, transform: Transform}, XNode> = {
         children = node.children.map(mapNode);
       }
       
-      children.forEach(child => {
-        child.parent = transformed;
-      });
+      // Only set children if we actually have children or the original node had children
+      if (children.length > 0 || (node.children && node.children.length > 0)) {
+        transformed.children = children;
+        children.forEach(child => {
+          child.parent = transformed;
+        });
+      } else {
+        // Remove children property if original didn't have it and transform didn't add any
+        delete transformed.children;
+      }
       
-      return { ...transformed, children };
+      return transformed;
     };
     
     return mapNode(tree);
