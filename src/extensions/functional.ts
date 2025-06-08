@@ -174,17 +174,19 @@ const selectStage: PipelineStage<{tree: XNode, predicate: (node: XNode) => boole
   }
 };
 
-const branchStage: PipelineStage<{tree: XNode, predicate: (node: XNode) => boolean}, {collection: XNode, paths: number[][]}> = {
+const branchStage: PipelineStage<{tree: XNode, predicate: (node: XNode) => boolean}, {collection: XNode, paths: number[][], originalNodes: XNode[]}> = {
   name: 'branch',
   execute: ({ tree, predicate }, context) => {
     const collection = createCollection(context.config.fragmentRoot || 'results');
     const paths: number[][] = [];
+    const originalNodes: XNode[] = [];
     
     const collectWithPaths = (node: XNode, path: number[]) => {
       if (predicate(node)) {
         const cloned = cloneNodeSimple(node, true);
         addChild(collection, cloned);
         paths.push([...path]);
+        originalNodes.push(node); // Store original node reference
       }
       
       if (node.children) {
@@ -195,7 +197,7 @@ const branchStage: PipelineStage<{tree: XNode, predicate: (node: XNode) => boole
     };
     
     collectWithPaths(tree, []);
-    return { collection, paths };
+    return { collection, paths, originalNodes };
   }
 };
 
@@ -327,7 +329,7 @@ export function branch(this: ExtensionContext, predicate: (node: XNode) => boole
   // Convert to existing BranchContext format
   this.branchContext = {
     parentNode: this.xnode!,
-    selectedNodes: result.collection.children || [],
+    selectedNodes: result.originalNodes, // Use original nodes instead of cloned ones
     originalPaths: result.paths
   };
   
